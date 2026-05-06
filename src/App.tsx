@@ -46,6 +46,27 @@ type WatchItem = {
   series: number[]
 }
 
+type PropensityQuestion = {
+  q: string
+  opts: string[]
+}
+
+type PropensityResult = {
+  title: string
+  badge: string
+  score: number
+  summary: string
+  note: string
+  traits: Array<{ label: string; val: number; point: boolean }>
+}
+
+type TourStep = {
+  sel: string
+  title: string
+  text: string
+  pos: 'top' | 'bottom' | 'left' | 'right'
+}
+
 type MarketData = {
   generatedAt: string
   generatedAtLabel: string
@@ -126,6 +147,70 @@ const quiz = {
   ],
 }
 
+const PROPENSITY_QUESTIONS: PropensityQuestion[] = [
+  {
+    q: '투자 기간은 얼마나 생각하시나요?',
+    opts: ['1개월 이내', '3~6개월', '1년 이상'],
+  },
+  {
+    q: '주가가 10% 하락하면 어떻게 할까요?',
+    opts: ['바로 정리한다', '일단 관망한다', '추가 매수도 고려한다'],
+  },
+  {
+    q: '투자에서 더 중요한 것은 무엇인가요?',
+    opts: ['안정성', '균형', '성장성'],
+  },
+  {
+    q: '원하는 투자 스타일에 더 가까운 것은?',
+    opts: ['배당 중심', '분산 투자', '고성장 중심'],
+  },
+]
+
+const TOUR_STEPS: TourStep[] = [
+  {
+    sel: '[data-tour="market-summary"]',
+    title: '시장 요약',
+    text: '6개의 핵심 지표를 한눈에 보세요. 카드 위에 마우스를 올리면 설명이 떠요.',
+    pos: 'bottom',
+  },
+  {
+    sel: '[data-tour="chart"]',
+    title: '내 종목 차트',
+    text: '관심 종목의 흐름을 차트로 보고, 핵심 지표도 함께 확인할 수 있어요.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="news"]',
+    title: '시장 핵심 뉴스',
+    text: '오늘 시장에 영향을 주는 뉴스만 모아 보여줍니다.',
+    pos: 'left',
+  },
+  {
+    sel: '[data-tour="watch"]',
+    title: '관심 종목',
+    text: '내가 보는 종목의 가격과 추세를 빠르게 확인하세요.',
+    pos: 'left',
+  },
+  {
+    sel: '[data-tour="propensity"]',
+    title: '투자성향 분석',
+    text: '설문과 관심 종목을 바탕으로 나만의 투자 성향을 보여줍니다.',
+    pos: 'top',
+  },
+  {
+    sel: '[data-tour="quiz"]',
+    title: '데일리 퀴즈',
+    text: '짧은 퀴즈로 경제 상식을 늘려보세요.',
+    pos: 'top',
+  },
+  {
+    sel: '[data-tour="beginner-toggle"]',
+    title: '초보자 모드',
+    text: '언제든지 토글로 쉬운 설명 표시를 켜고 끌 수 있어요.',
+    pos: 'right',
+  },
+]
+
 function Sparkline({ data }: { data: number[] }) {
   const width = 92
   const height = 34
@@ -182,12 +267,234 @@ function ChartArea({ data }: { data: number[] }) {
   )
 }
 
+function createPropensityResult(answers: number[]): PropensityResult {
+  const score = answers.reduce((total, answer, index) => {
+    const bonusByQuestion = [12, 14, 13, 11]
+    return total + bonusByQuestion[index] * answer
+  }, 40)
+
+  let profile: Pick<PropensityResult, 'title' | 'badge' | 'summary' | 'note'>
+
+  if (score < 48) {
+    profile = {
+      title: '안정형',
+      badge: '리스크 관리 우선',
+      summary: '손실을 줄이고 흐름을 천천히 확인하는 성향입니다.',
+      note: '배당, 대형주, 분산처럼 흔들림이 적은 선택이 잘 맞습니다.',
+    }
+  } else if (score < 68) {
+    profile = {
+      title: '균형형',
+      badge: '안정과 성장의 중간',
+      summary: '안정성과 성장성을 함께 보는 편입니다.',
+      note: '대형 우량주와 일부 성장주를 섞는 방식이 어울립니다.',
+    }
+  } else if (score < 84) {
+    profile = {
+      title: '성장형',
+      badge: '성장 잠재력 중시',
+      summary: '조금 더 큰 변동을 감수하고 성장 가능성을 보는 편입니다.',
+      note: '실적 개선, 산업 성장성, 중장기 모멘텀을 중요하게 봅니다.',
+    }
+  } else {
+    profile = {
+      title: '공격형',
+      badge: '높은 변동성 감내',
+      summary: '변동성을 감수하더라도 높은 수익 기회를 적극적으로 찾는 성향입니다.',
+      note: '변동성이 큰 종목을 다루더라도 비중 관리가 중요합니다.',
+    }
+  }
+
+  const traits = [
+    { label: '안정 추구', val: Math.max(18, 92 - answers[0] * 18 - answers[2] * 10), point: true },
+    { label: '장기 투자', val: Math.max(20, 40 + answers[0] * 20 + answers[3] * 10), point: false },
+    { label: '리스크 감내', val: Math.max(14, 26 + answers[1] * 24 + answers[2] * 10), point: false },
+    { label: '학습 의지', val: Math.max(30, 58 + answers[3] * 12), point: true },
+  ]
+
+  return {
+    title: profile.title,
+    badge: profile.badge,
+    score,
+    summary: profile.summary,
+    note: profile.note,
+    traits,
+  }
+}
+
+function SurveyModal({
+  open,
+  step,
+  answers,
+  onPick,
+  onPrev,
+  onNext,
+  onClose,
+}: {
+  open: boolean
+  step: number
+  answers: number[]
+  onPick: (index: number) => void
+  onPrev: () => void
+  onNext: () => void
+  onClose: () => void
+}) {
+  const question = PROPENSITY_QUESTIONS[step]
+  const canNext = answers[step] !== undefined
+
+  if (!open) return null
+
+  return (
+    <>
+      <div className="overlay show" onClick={onClose} />
+      <div className="modal show">
+        <div className="modal-head">
+          <div>
+            <div className="survey-step">투자 성향 분석 · {step + 1}/{PROPENSITY_QUESTIONS.length}</div>
+            <div className="modal-title" style={{ marginTop: 6 }}>나에게 맞는 투자 스타일을 찾아볼게요</div>
+            <div className="modal-sub">짧은 질문 4개로 성향을 계산합니다</div>
+          </div>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+
+        <div className="survey-q">{question.q}</div>
+
+        <div className="survey-opts">
+          {question.opts.map((option, index) => (
+            <button
+              key={option}
+              className={`survey-opt ${answers[step] === index ? 'selected' : ''}`}
+              onClick={() => onPick(index)}
+            >
+              <span className="survey-opt-radio" />
+              {option}
+            </button>
+          ))}
+        </div>
+
+        <div className="modal-foot">
+          <div className="step-dots">
+            {PROPENSITY_QUESTIONS.map((_, index) => (
+              <div key={index} className={`step-dot ${index === step ? 'active' : ''}`} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {step > 0 && <button className="btn-ghost" onClick={onPrev}>이전</button>}
+            <button className="btn-primary" onClick={onNext} disabled={!canNext} style={{ opacity: canNext ? 1 : 0.5, cursor: canNext ? 'pointer' : 'not-allowed' }}>
+              {step === PROPENSITY_QUESTIONS.length - 1 ? '분석하기' : '다음'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function TourOverlay({
+  active,
+  step,
+  onNext,
+  onSkip,
+}: {
+  active: boolean
+  step: number
+  onNext: () => void
+  onSkip: () => void
+}) {
+  const [box, setBox] = useState<null | (TourStep & { x: number; y: number; w: number; h: number })>(null)
+
+  useEffect(() => {
+    if (!active) {
+      return
+    }
+
+    const update = () => {
+      const target = TOUR_STEPS[step]
+      const element = document.querySelector(target.sel)
+      if (!element) {
+        setBox(null)
+        return
+      }
+
+      const rect = element.getBoundingClientRect()
+      setBox({
+        ...target,
+        x: rect.left - 8,
+        y: rect.top - 8,
+        w: rect.width + 16,
+        h: rect.height + 16,
+      })
+    }
+
+    update()
+    const element = document.querySelector(TOUR_STEPS[step].sel)
+    if (element && 'scrollIntoView' in element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [active, step])
+
+  if (!active || !box) return null
+
+  const cardWidth = 320
+  const cardHeight = 180
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+
+  let left = box.x + box.w + 12
+  let top = box.y + box.h / 2 - cardHeight / 2
+
+  if (box.pos === 'bottom') {
+    left = box.x + box.w / 2 - cardWidth / 2
+    top = box.y + box.h + 12
+  } else if (box.pos === 'top') {
+    left = box.x + box.w / 2 - cardWidth / 2
+    top = box.y - cardHeight - 12
+  } else if (box.pos === 'left') {
+    left = box.x - cardWidth - 12
+    top = box.y + box.h / 2 - cardHeight / 2
+  }
+
+  left = Math.max(16, Math.min(left, viewportWidth - cardWidth - 16))
+  top = Math.max(16, Math.min(top, viewportHeight - cardHeight - 16))
+
+  return (
+    <div className="tour-overlay show">
+      <div className="tour-spot" style={{ left: box.x, top: box.y, width: box.w, height: box.h }} />
+      <div className="tour-card" style={{ left, top }}>
+        <span className="tour-step-label">STEP {step + 1} / {TOUR_STEPS.length}</span>
+        <div className="tour-title">{box.title}</div>
+        <div className="tour-text">{box.text}</div>
+        <div className="tour-foot">
+          <button className="tour-skip" onClick={onSkip}>건너뛰기</button>
+          <button className="btn-primary" onClick={onNext}>
+            {step === TOUR_STEPS.length - 1 ? '시작하기' : '다음'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [beginner, setBeginner] = useState(true)
   const [active, setActive] = useState('home')
   const [picked, setPicked] = useState<number | null>(null)
   const [marketData, setMarketData] = useState<MarketData>(defaultMarketData)
   const [dataSource, setDataSource] = useState<'Yahoo Finance' | '기본 데이터'>('기본 데이터')
+  const [tourActive, setTourActive] = useState(false)
+  const [tourStep, setTourStep] = useState(0)
+  const [propensityOpen, setPropensityOpen] = useState(false)
+  const [propensityStep, setPropensityStep] = useState(0)
+  const [propensityAnswers, setPropensityAnswers] = useState<number[]>([])
+  const [propensityResult, setPropensityResult] = useState<PropensityResult | null>(null)
 
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
@@ -224,6 +531,59 @@ function App() {
     [],
   )
 
+  const startTour = () => {
+    setTourStep(0)
+    setTourActive(true)
+  }
+
+  const nextTourStep = () => {
+    if (tourStep >= TOUR_STEPS.length - 1) {
+      setTourActive(false)
+      return
+    }
+
+    setTourStep((value) => value + 1)
+  }
+
+  const skipTour = () => {
+    setTourActive(false)
+  }
+
+  const openPropensity = () => {
+    setPropensityStep(0)
+    setPropensityAnswers([])
+    setPropensityOpen(true)
+  }
+
+  const closePropensity = () => {
+    setPropensityOpen(false)
+  }
+
+  const pickPropensityAnswer = (index: number) => {
+    setPropensityAnswers((current) => {
+      const next = [...current]
+      next[propensityStep] = index
+      return next
+    })
+  }
+
+  const nextPropensityStep = () => {
+    const isLast = propensityStep === PROPENSITY_QUESTIONS.length - 1
+
+    if (!isLast) {
+      setPropensityStep((current) => current + 1)
+      return
+    }
+
+    const result = createPropensityResult(propensityAnswers)
+    setPropensityResult(result)
+    setPropensityOpen(false)
+  }
+
+  const prevPropensityStep = () => {
+    setPropensityStep((current) => Math.max(0, current - 1))
+  }
+
   return (
     <div className={`app ${beginner ? 'beginner' : 'pro'}`}>
       <aside className="sidebar">
@@ -259,6 +619,18 @@ function App() {
           ))}
         </nav>
 
+        <nav className="nav">
+          <div className="nav-label">Tools</div>
+          <button className="nav-item" onClick={openPropensity}>
+            <span className="nav-icon">✨</span>
+            <span>투자성향 분석</span>
+          </button>
+          <button className="nav-item" onClick={startTour} data-tour="tour-btn">
+            <span className="nav-icon">🧭</span>
+            <span>가이드 투어</span>
+          </button>
+        </nav>
+
         <div className="sidebar-bottom">
           <div className="beginner-card">
             <div className="beginner-row">
@@ -266,7 +638,7 @@ function App() {
                 <div className="beginner-title">Beginner Mode</div>
                 <div className="beginner-sub">{beginner ? '쉬운 설명 표시' : '전문가 모드'}</div>
               </div>
-              <div className={`toggle ${beginner ? 'on' : ''}`} onClick={() => setBeginner((value) => !value)} role="button" tabIndex={0}>
+              <div className={`toggle ${beginner ? 'on' : ''}`} onClick={() => setBeginner((value) => !value)} role="button" tabIndex={0} data-tour="beginner-toggle">
                 <div className="toggle-knob" />
               </div>
             </div>
@@ -294,7 +666,7 @@ function App() {
         </header>
 
         <div className="content">
-          <section className="indicators">
+          <section className="indicators" data-tour="market-summary">
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">1</span> 시장 요약</div>
@@ -333,7 +705,7 @@ function App() {
             </div>
           </section>
 
-          <section className="card chart-card">
+          <section className="card chart-card" data-tour="chart">
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">2</span> 내가 보고있는 종목</div>
@@ -375,7 +747,7 @@ function App() {
             </div>
           </section>
 
-          <section className="card">
+          <section className="card" data-tour="news">
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">3</span> 주요 뉴스</div>
@@ -397,7 +769,7 @@ function App() {
             </div>
           </section>
 
-          <section className="card">
+          <section className="card" data-tour="watch">
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">4</span> 관심 종목</div>
@@ -425,51 +797,72 @@ function App() {
             </div>
           </section>
 
-          <section className="card">
+          <section className="card" data-tour="propensity">
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">5</span> 유저 투자성향</div>
                 <div className="card-title">나의 투자 DNA</div>
                 {beginner && <div className="card-sub">간단한 설문과 관심 종목을 바탕으로 보여줘요.</div>}
               </div>
+              <button className="card-action" onClick={openPropensity}>성향 분석 시작</button>
             </div>
-            <div className="propensity">
-              <div className="donut-wrap">
-                <svg viewBox="0 0 120 120" width="130" height="130">
-                  <circle cx="60" cy="60" r="48" fill="none" stroke="#f7f6f4" strokeWidth="14" />
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="48"
-                    fill="none"
-                    stroke="#facc18"
-                    strokeWidth="14"
-                    strokeDasharray={`${2 * Math.PI * 48}`}
-                    strokeDashoffset={`${2 * Math.PI * 48 * (1 - 0.72)}`}
-                    transform="rotate(-90 60 60)"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="donut-center">
-                  <div className="donut-type">안정 성장형</div>
-                  <div className="donut-score">스코어 72</div>
-                </div>
-              </div>
-              <div className="propensity-list">
-                {['안정 추구', '장기 투자', '리스크 감내', '학습 의지'].map((label, index) => (
-                  <div key={label} className="propensity-row">
-                    <div className="propensity-label">{label}</div>
-                    <div className="propensity-bar">
-                      <div className={`propensity-bar-fill ${index % 2 === 0 ? 'point' : ''}`} style={{ width: `${78 - index * 12}%` }} />
+            {propensityResult ? (
+              <>
+                <div className="propensity">
+                  <div className="donut-wrap">
+                    <svg viewBox="0 0 120 120" width="130" height="130">
+                      <circle cx="60" cy="60" r="48" fill="none" stroke="#f7f6f4" strokeWidth="14" />
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r="48"
+                        fill="none"
+                        stroke="#facc18"
+                        strokeWidth="14"
+                        strokeDasharray={`${2 * Math.PI * 48}`}
+                        strokeDashoffset={`${2 * Math.PI * 48 * (1 - propensityResult.score / 100)}`}
+                        transform="rotate(-90 60 60)"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="donut-center">
+                      <div className="donut-type">{propensityResult.title}</div>
+                      <div className="donut-score">스코어 {propensityResult.score}</div>
                     </div>
-                    <div className="propensity-val">{78 - index * 12}</div>
                   </div>
-                ))}
+                  <div className="propensity-list">
+                    {propensityResult.traits.map((trait) => (
+                      <div key={trait.label} className="propensity-row">
+                        <div className="propensity-label">{trait.label}</div>
+                        <div className="propensity-bar">
+                          <div className={`propensity-bar-fill ${trait.point ? 'point' : ''}`} style={{ width: `${trait.val}%` }} />
+                        </div>
+                        <div className="propensity-val">{trait.val}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="glossary-mini" style={{ marginTop: 12 }}>
+                  {propensityResult.badge} · {propensityResult.summary} {beginner ? ` ${propensityResult.note}` : ''}
+                </div>
+                <button className="btn-ghost propensity-cta" onClick={openPropensity}>
+                  다시 분석하기
+                </button>
+              </>
+            ) : (
+              <div style={{ display: 'grid', gap: 12, alignItems: 'start' }}>
+                <div style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.7 }}>
+                  4개의 질문으로 투자 성향을 분석하고, 내 성향에 맞는 해석을 보여드려요.
+                </div>
+                <button className="btn-primary propensity-cta" onClick={openPropensity}>
+                  성향 분석 시작하기
+                </button>
+                <div className="glossary-mini">분석을 완료하면 안정형, 균형형, 성장형, 공격형 중 하나로 정리됩니다.</div>
               </div>
-            </div>
+            )}
           </section>
 
-          <section className="card">
+          <section className="card" data-tour="quiz">
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">6</span> 투자 상식 카드</div>
@@ -529,6 +922,17 @@ function App() {
           </section>
         </div>
       </main>
+
+      <TourOverlay active={tourActive} step={tourStep} onNext={nextTourStep} onSkip={skipTour} />
+      <SurveyModal
+        open={propensityOpen}
+        step={propensityStep}
+        answers={propensityAnswers}
+        onPick={pickPropensityAnswer}
+        onPrev={prevPropensityStep}
+        onNext={nextPropensityStep}
+        onClose={closePropensity}
+      />
     </div>
   )
 }
