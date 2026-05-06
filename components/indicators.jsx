@@ -18,9 +18,15 @@ const IndicatorCard = ({ ind, beginner }) => {
     setShow(true);
   };
 
+  const onMove = (event) => {
+    if (!beginner || !show) return;
+    setPos({ x: event.clientX, y: event.clientY + 14, w: pos.w });
+  };
+
   return (
     <div className="indicator" ref={ref}
       onMouseEnter={onEnter}
+      onMouseMove={onMove}
       onMouseLeave={() => setShow(false)}
       style={{cursor: beginner ? 'help' : 'default'}}>
       <div className="indicator-label">
@@ -38,7 +44,7 @@ const IndicatorCard = ({ ind, beginner }) => {
         <Sparkline data={sparkData} color={ind.up ? '#d4453a' : '#1e8a5b'} width={56} height={20}/>
       </div>
       {show && ReactDOM.createPortal(
-        <div className="tooltip-fixed show" style={{left: pos.x, top: pos.y}}>
+        <div className="tooltip-fixed show" style={{left: pos.x, top: pos.y, zIndex: 999}}>
           <div className="tooltip-label">What it is</div>
           <div className="tooltip-title">{ind.label}</div>
           <div>{ind.desc}</div>
@@ -192,21 +198,26 @@ const StatItem = ({ label, value, beginner }) => {
     if (!beginner || !info) return;
     if (ref.current) {
       const r = ref.current.getBoundingClientRect();
-      setPos({ x: r.left + r.width/2, y: r.top - 10 });
+      setPos({ x: r.left + r.width / 2, y: r.top - 10 });
     }
     setShow(true);
   };
 
+  const onMove = (event) => {
+    if (!beginner || !show) return;
+    setPos({ x: event.clientX, y: event.clientY - 14 });
+  };
+
   return (
     <div ref={ref} className={`chart-stat ${beginner ? 'has-help' : ''}`}
-      onMouseEnter={onEnter} onMouseLeave={() => setShow(false)}>
+      onMouseEnter={onEnter} onMouseMove={onMove} onMouseLeave={() => setShow(false)}>
       <div className="chart-stat-label">
         {label}
         {beginner && info && <span className="stat-info-dot">i</span>}
       </div>
       <div className="chart-stat-value">{value}</div>
       {show && info && ReactDOM.createPortal(
-        <div className="tooltip-fixed tooltip-up show" style={{left: pos.x, top: pos.y}}>
+        <div className="tooltip-fixed tooltip-up show" style={{left: pos.x, top: pos.y, zIndex: 999}}>
           <div className="tooltip-label">What it is</div>
           <div className="tooltip-title">{info.title}</div>
           <div>{info.desc}</div>
