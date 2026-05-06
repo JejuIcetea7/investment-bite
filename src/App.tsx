@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import './App.css'
 
 type Indicator = {
@@ -67,6 +68,13 @@ type TourStep = {
   pos: 'top' | 'bottom' | 'left' | 'right'
 }
 
+type SectionHelp = {
+  title: string
+  text: string
+  x: number
+  y: number
+}
+
 type MarketData = {
   generatedAt: string
   generatedAtLabel: string
@@ -74,6 +82,12 @@ type MarketData = {
   indicators: Indicator[]
   chart: ChartData
   watchlist: WatchItem[]
+}
+type HoverHelp = {
+  title: string
+  text: string
+  x: number
+  y: number
 }
 
 const defaultMarketData: MarketData = {
@@ -121,6 +135,51 @@ const defaultMarketData: MarketData = {
     { name: '카카오', symbol: '035720.KS', price: '38,150', chg: '+0.92%', up: true, series: [1.2, 1.25, 1.22, 1.3, 1.28, 1.34, 1.38, 1.42] },
     { name: 'SK하이닉스', symbol: '000660.KS', price: '195,500', chg: '+3.21%', up: true, series: [1.8, 2, 1.9, 2.2, 2.3, 2.5, 2.7, 3] },
   ],
+}
+const INDICATOR_HELP: Record<string, { title: string; text: string }> = {
+  KOSPI: {
+    title: 'KOSPI',
+    text: '국내 주식시장의 대표 지수입니다. 전체 한국 증시가 강한지 약한지를 빠르게 보여줍니다.',
+  },
+  'S&P 500': {
+    title: 'S&P 500',
+    text: '미국 대형주 500개를 묶은 대표 지수입니다. 글로벌 위험선호 분위기를 확인할 때 자주 봅니다.',
+  },
+  'USD/KRW': {
+    title: 'USD/KRW',
+    text: '원화 대비 달러 환율입니다. 수출주, 원자재, 외국인 수급에 영향을 줄 수 있습니다.',
+  },
+  WTI: {
+    title: 'WTI',
+    text: '서부텍사스산 원유 가격입니다. 에너지와 물가 흐름을 볼 때 참고합니다.',
+  },
+  Bitcoin: {
+    title: 'Bitcoin',
+    text: '가상자산 대표 자산입니다. 위험자산 선호와 유동성 분위기를 가늠할 때 함께 봅니다.',
+  },
+  VIX: {
+    title: 'VIX',
+    text: '시장 변동성 지수입니다. 높아질수록 불안 심리가 커졌다고 해석하는 경우가 많습니다.',
+  },
+}
+
+const STAT_HELP: Record<string, { title: string; text: string }> = {
+  거래량: {
+    title: '거래량 (Volume)',
+    text: '하루 동안 사고팔린 주식 수입니다. 관심이 집중되면 거래량이 함께 늘어나는 경우가 많습니다.',
+  },
+  시가총액: {
+    title: '시가총액 (Market Cap)',
+    text: '주가에 발행 주식 수를 곱한 값입니다. 회사의 규모를 보는 가장 기본적인 지표입니다.',
+  },
+  PER: {
+    title: 'PER (주가수익비율)',
+    text: '주가가 연간 이익의 몇 배인지 나타냅니다. 가치평가를 볼 때 자주 사용합니다.',
+  },
+  '52주 변동': {
+    title: '52주 변동폭',
+    text: '지난 1년간의 최저가와 최고가 범위입니다. 현재 가격이 어느 위치에 있는지 확인할 수 있습니다.',
+  },
 }
 
 const news = [
@@ -483,6 +542,19 @@ function TourOverlay({
   )
 }
 
+function SectionHelpTooltip({ help }: { help: HoverHelp | null }) {
+  if (!help) return null
+
+  return createPortal(
+    <div className="tooltip-fixed show" style={{ left: help.x, top: help.y, zIndex: 999 }}>
+      <div className="tooltip-label">What it is</div>
+      <div className="tooltip-title">{help.title}</div>
+      <div>{help.text}</div>
+    </div>,
+    document.body,
+  )
+}
+
 function App() {
   const [beginner, setBeginner] = useState(true)
   const [active, setActive] = useState('home')
@@ -495,6 +567,9 @@ function App() {
   const [propensityStep, setPropensityStep] = useState(0)
   const [propensityAnswers, setPropensityAnswers] = useState<number[]>([])
   const [propensityResult, setPropensityResult] = useState<PropensityResult | null>(null)
+  const [hoverHelp, setHoverHelp] = useState<HoverHelp | null>(null)
+  const [whyOpen, setWhyOpen] = useState(false)
+  const [whyPropOpen, setWhyPropOpen] = useState(false)
 
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
@@ -547,6 +622,26 @@ function App() {
 
   const skipTour = () => {
     setTourActive(false)
+  }
+
+  const showHoverHelp = (title: string, text: string) => (event: React.MouseEvent<HTMLElement>) => {
+    setHoverHelp({
+      title,
+      text,
+      x: event.clientX + 16,
+      y: event.clientY + 16,
+    })
+  }
+
+  const moveHoverHelp = (event: React.MouseEvent<HTMLElement>) => {
+    setHoverHelp((current) => {
+      if (!current) return current
+      return {
+        ...current,
+        x: event.clientX + 16,
+        y: event.clientY + 16,
+      }
+    })
   }
 
   const openPropensity = () => {
@@ -680,8 +775,21 @@ function App() {
             </div>
             <div className="indicators-page">
               {marketData.indicators.map((indicator) => (
-                <div key={indicator.label} className="indicator">
-                  <div className="indicator-label">{indicator.label}</div>
+                <div
+                  key={indicator.label}
+                  className="indicator"
+                  onMouseEnter={beginner ? showHoverHelp(
+                    INDICATOR_HELP[indicator.label]?.title ?? indicator.label,
+                    INDICATOR_HELP[indicator.label]?.text ?? '이 지표에 대한 설명이 아직 준비되지 않았습니다.',
+                  ) : undefined}
+                  onMouseMove={beginner ? moveHoverHelp : undefined}
+                  onMouseLeave={beginner ? () => setHoverHelp(null) : undefined}
+                  style={{ cursor: beginner ? 'help' : 'default' }}
+                >
+                  <div className="indicator-label">
+                    {indicator.label}
+                    {beginner && <span className="indicator-info">i</span>}
+                  </div>
                   <div className="indicator-value">{indicator.value}</div>
                   <div className={`indicator-change ${indicator.up ? 'up' : 'down'}`}>
                     {indicator.change} ({indicator.pct})
@@ -713,10 +821,27 @@ function App() {
                 {beginner && <div className="card-sub">{marketData.chart.note}</div>}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                <div className="chart-tabs">
-                  {['1D', '1W', '1M'].map((tab) => (
-                    <button key={tab} className={`chart-tab ${tab === '1D' ? 'active' : ''}`}>{tab}</button>
-                  ))}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ position: 'relative' }}>
+                    <button className="why-btn" onClick={() => setWhyOpen((v) => !v)}>
+                      <span className="q">?</span> Why?
+                    </button>
+                    <div className={`why-pop ${whyOpen ? 'show' : ''}`}>
+                      <span className="why-pop-tag">왜 올랐을까?</span>
+                      <div className="why-pop-title">{marketData.chart.name} {marketData.chart.percent} 상승</div>
+                      <div className="why-pop-text">HBM3E 양산 본격화 소식과 외국계 IB의 목표가 상향이 동시에 작용했습니다.</div>
+                      <div className="why-pop-list">
+                        <div className="why-pop-li">HBM3E 12단 적층 양산 발표</div>
+                        <div className="why-pop-li">모건스탠리 목표가 95,000원 → 105,000원</div>
+                        <div className="why-pop-li">외국인 5거래일 연속 순매수</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="chart-tabs">
+                    {['1D', '1W', '1M'].map((tab) => (
+                      <button key={tab} className={`chart-tab ${tab === '1D' ? 'active' : ''}`}>{tab}</button>
+                    ))}
+                  </div>
                 </div>
                 <span className="quiz-tag">{marketData.marketStatus.label}</span>
                 <span className="card-action">{dataSource}</span>
@@ -735,8 +860,21 @@ function App() {
             <div className="chart-area"><ChartArea data={marketData.chart.series} /></div>
             <div className="chart-stats">
               {marketData.chart.stats.map((stat) => (
-                <div key={stat.label}>
-                  <div className="chart-stat-label">{stat.label}</div>
+                <div
+                  key={stat.label}
+                  className={`chart-stat ${beginner && STAT_HELP[stat.label] ? 'has-help' : ''}`}
+                  onMouseEnter={beginner && STAT_HELP[stat.label] ? showHoverHelp(
+                    STAT_HELP[stat.label].title,
+                    STAT_HELP[stat.label].text,
+                  ) : undefined}
+                  onMouseMove={beginner && STAT_HELP[stat.label] ? moveHoverHelp : undefined}
+                  onMouseLeave={beginner && STAT_HELP[stat.label] ? () => setHoverHelp(null) : undefined}
+                  style={{ cursor: beginner && STAT_HELP[stat.label] ? 'help' : 'default' }}
+                >
+                  <div className="chart-stat-label">
+                    {stat.label}
+                    {beginner && STAT_HELP[stat.label] && <span className="stat-info-dot">i</span>}
+                  </div>
                   <div className="chart-stat-value">{stat.value}</div>
                 </div>
               ))}
@@ -804,7 +942,24 @@ function App() {
                 <div className="card-title">나의 투자 DNA</div>
                 {beginner && <div className="card-sub">간단한 설문과 관심 종목을 바탕으로 보여줘요.</div>}
               </div>
-              <button className="card-action" onClick={openPropensity}>성향 분석 시작</button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ position: 'relative' }}>
+                  <button className="why-btn" onClick={() => setWhyPropOpen((v) => !v)}>
+                    <span className="q">?</span> Why?
+                  </button>
+                  <div className={`why-pop ${whyPropOpen ? 'show' : ''}`}>
+                    <span className="why-pop-tag">왜 이 성향일까?</span>
+                    <div className="why-pop-title">나의 투자 DNA 분석</div>
+                    <div className="why-pop-text">설문 답변과 관심 종목의 변동성을 바탕으로 성향을 계산합니다.</div>
+                    <div className="why-pop-list">
+                      <div className="why-pop-li">손실 감내 수준 · 투자 기간 반영</div>
+                      <div className="why-pop-li">관심 종목 리스크 프로파일 분석</div>
+                      <div className="why-pop-li">4개 질문 → 안정형~공격형 분류</div>
+                    </div>
+                  </div>
+                </div>
+                <button className="card-action" onClick={openPropensity}>성향 분석 시작</button>
+              </div>
             </div>
             {propensityResult ? (
               <>
@@ -923,6 +1078,7 @@ function App() {
         </div>
       </main>
 
+      <SectionHelpTooltip help={hoverHelp} />
       <TourOverlay active={tourActive} step={tourStep} onNext={nextTourStep} onSkip={skipTour} />
       <SurveyModal
         open={propensityOpen}
