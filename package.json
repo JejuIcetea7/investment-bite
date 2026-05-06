@@ -4,6 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "sync:market": "node scripts/update-market-data.mjs",
+    "predev": "npm run sync:market",
+    "prebuild": "npm run sync:market",
+    "prepreview": "npm run sync:market",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -11,7 +15,8 @@
   },
   "dependencies": {
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "yahoo-finance2": "^3.14.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

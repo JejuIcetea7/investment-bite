@@ -3,34 +3,110 @@ import './App.css'
 
 type Indicator = {
   label: string
+  symbol: string
   value: string
   change: string
   pct: string
   up: boolean
+  series: number[]
 }
 
-const indicators: Indicator[] = [
-  { label: 'KOSPI', value: '2,718.43', change: '+18.62', pct: '+0.69%', up: true },
-  { label: 'S&P 500', value: '5,832.91', change: '-12.47', pct: '-0.21%', up: false },
-  { label: 'USD/KRW', value: '1,378.20', change: '+3.40', pct: '+0.25%', up: true },
-  { label: 'WTI', value: '78.42', change: '+0.85', pct: '+1.10%', up: true },
-  { label: 'Bitcoin', value: '92,341', change: '+1,820', pct: '+2.01%', up: true },
-  { label: 'VIX', value: '14.82', change: '-0.34', pct: '-2.24%', up: false },
-]
+type MarketStat = {
+  label: string
+  value: string
+}
+
+type MarketStatus = {
+  signal: 'up' | 'down' | 'sideways' | 'caution' | 'insufficient_data' | 'invalid_data'
+  label: string
+  reasonText: string
+  reasonCodes: string[]
+  riskReasons: string[]
+  volatilityLevel: 'low' | 'medium' | 'high' | 'unknown'
+}
+
+type ChartData = {
+  symbol: string
+  name: string
+  currency: string
+  price: string
+  change: string
+  percent: string
+  series: number[]
+  stats: MarketStat[]
+  note: string
+}
+
+type WatchItem = {
+  name: string
+  symbol: string
+  price: string
+  chg: string
+  up: boolean
+  series: number[]
+}
+
+type MarketData = {
+  generatedAt: string
+  generatedAtLabel: string
+  marketStatus: MarketStatus
+  indicators: Indicator[]
+  chart: ChartData
+  watchlist: WatchItem[]
+}
+
+const defaultMarketData: MarketData = {
+  generatedAt: '2026-05-05T05:32:00.000Z',
+  generatedAtLabel: '2026년 5월 5일 화요일 · 장 마감 14:32',
+  marketStatus: {
+    signal: 'sideways',
+    label: '횡보',
+    reasonText: '방향성이 뚜렷하지 않습니다.',
+    reasonCodes: ['PRICE_NEAR_MA20'],
+    riskReasons: [],
+    volatilityLevel: 'medium',
+  },
+  indicators: [
+    { label: 'KOSPI', symbol: '^KS11', value: '2,718.43', change: '+18.62', pct: '+0.69%', up: true, series: [1, 2, 1.5, 2.1, 2, 2.5, 2.3, 2.8] },
+    { label: 'S&P 500', symbol: '^GSPC', value: '5,832.91', change: '-12.47', pct: '-0.21%', up: false, series: [2.8, 2.7, 2.6, 2.7, 2.5, 2.4, 2.3, 2.2] },
+    { label: 'USD/KRW', symbol: 'USDKRW=X', value: '1,378.20', change: '+3.40', pct: '+0.25%', up: true, series: [1, 1.2, 1.1, 1.3, 1.2, 1.35, 1.4, 1.45] },
+    { label: 'WTI', symbol: 'CL=F', value: '78.42', change: '+0.85', pct: '+1.10%', up: true, series: [2, 2.1, 2.2, 2.15, 2.25, 2.3, 2.32, 2.4] },
+    { label: 'Bitcoin', symbol: 'BTC-USD', value: '92,341', change: '+1,820', pct: '+2.01%', up: true, series: [3, 3.4, 3.3, 3.6, 3.8, 4, 4.1, 4.3] },
+    { label: 'VIX', symbol: '^VIX', value: '14.82', change: '-0.34', pct: '-2.24%', up: false, series: [2.2, 2.1, 2, 1.9, 1.8, 1.7, 1.6, 1.5] },
+  ],
+  chart: {
+    symbol: '005930.KS',
+    name: '삼성전자',
+    currency: 'KRW',
+    price: '72,400',
+    change: '+1,300',
+    percent: '+1.83%',
+    series: Array.from({ length: 60 }, (_, index) => {
+      const base = 48 + Math.sin(index / 7) * 7 + Math.cos(index / 4) * 3
+      return base + index * 0.22
+    }),
+    stats: [
+      { label: '거래량', value: '14.2M' },
+      { label: '시가총액', value: '432조' },
+      { label: 'PER', value: '14.8x' },
+      { label: '52주 변동', value: '68,000–86,500' },
+    ],
+    note: '주가 흐름과 핵심 지표를 같이 볼 수 있어요.',
+  },
+  watchlist: [
+    { name: '삼성전자', symbol: '005930.KS', price: '72,400', chg: '+1.83%', up: true, series: [1, 2, 1, 3, 2, 4, 3, 5] },
+    { name: 'NVIDIA', symbol: 'NVDA', price: '$148.20', chg: '+2.41%', up: true, series: [2, 2.2, 2.1, 2.4, 2.5, 2.7, 2.8, 3] },
+    { name: 'Apple Inc.', symbol: 'AAPL', price: '$226.45', chg: '-0.62%', up: false, series: [3, 2.9, 2.8, 2.7, 2.6, 2.5, 2.45, 2.4] },
+    { name: '카카오', symbol: '035720.KS', price: '38,150', chg: '+0.92%', up: true, series: [1.2, 1.25, 1.22, 1.3, 1.28, 1.34, 1.38, 1.42] },
+    { name: 'SK하이닉스', symbol: '000660.KS', price: '195,500', chg: '+3.21%', up: true, series: [1.8, 2, 1.9, 2.2, 2.3, 2.5, 2.7, 3] },
+  ],
+}
 
 const news = [
   { tag: '시장', title: '코스피, 외국인 매수에 2,720선 회복… 반도체 강세 지속', meta: '한국경제 · 12분 전' },
   { tag: '종목', title: '삼성전자, HBM3E 양산 본격화 발표… 외국계 목표가 상향', meta: '머니투데이 · 1시간 전' },
   { tag: '경제', title: '미 CPI 둔화 전망… 12월 금리 인하 가능성 60% 반영', meta: '블룸버그 · 2시간 전' },
   { tag: '정책', title: '한국은행 총재 "당분간 통화정책 신중 기조 유지"', meta: '연합뉴스 · 3시간 전' },
-]
-
-const watchlist = [
-  { name: '삼성전자', symbol: '005930', price: '72,400', chg: '+1.83%', up: true },
-  { name: 'NVIDIA', symbol: 'NVDA', price: '$148.20', chg: '+2.41%', up: true },
-  { name: 'Apple Inc.', symbol: 'AAPL', price: '$226.45', chg: '-0.62%', up: false },
-  { name: '카카오', symbol: '035720', price: '38,150', chg: '+0.92%', up: true },
-  { name: 'SK하이닉스', symbol: '000660', price: '195,500', chg: '+3.21%', up: true },
 ]
 
 const knowCards = [
@@ -49,11 +125,6 @@ const quiz = {
     { letter: 'D', text: '단타 매매', correct: false },
   ],
 }
-
-const chartPoints = Array.from({ length: 60 }, (_, index) => {
-  const base = 48 + Math.sin(index / 7) * 7 + Math.cos(index / 4) * 3
-  return base + index * 0.22
-})
 
 function Sparkline({ data }: { data: number[] }) {
   const width = 92
@@ -76,25 +147,25 @@ function Sparkline({ data }: { data: number[] }) {
   )
 }
 
-function ChartArea() {
-  const W = 720
-  const H = 220
-  const PAD = 6
-  const min = Math.min(...chartPoints)
-  const max = Math.max(...chartPoints)
+function ChartArea({ data }: { data: number[] }) {
+  const width = 720
+  const height = 220
+  const padding = 6
+  const min = Math.min(...data)
+  const max = Math.max(...data)
   const range = max - min || 1
 
-  const points = chartPoints.map((value, index) => {
-    const x = PAD + (index / (chartPoints.length - 1)) * (W - PAD * 2)
-    const y = PAD + (1 - (value - min) / range) * (H - PAD * 2)
+  const points = data.map((value, index) => {
+    const x = padding + (index / (data.length - 1)) * (width - padding * 2)
+    const y = padding + (1 - (value - min) / range) * (height - padding * 2)
     return [x, y] as const
   })
 
-  const d = points.map(([x, y], index) => `${index === 0 ? 'M' : 'L'}${x},${y}`).join(' ')
-  const fillD = `${d} L${W - PAD},${H - PAD} L${PAD},${H - PAD} Z`
+  const path = points.map(([x, y], index) => `${index === 0 ? 'M' : 'L'}${x},${y}`).join(' ')
+  const fillPath = `${path} L${width - padding},${height - padding} L${padding},${height - padding} Z`
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
       <defs>
         <linearGradient id="chartGrad" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="#facc18" stopOpacity="0.35" />
@@ -102,10 +173,10 @@ function ChartArea() {
         </linearGradient>
       </defs>
       {[0.25, 0.5, 0.75].map((fraction) => (
-        <line key={fraction} x1={PAD} x2={W - PAD} y1={H * fraction} y2={H * fraction} stroke="#ece9e2" strokeDasharray="3 4" />
+        <line key={fraction} x1={padding} x2={width - padding} y1={height * fraction} y2={height * fraction} stroke="#ece9e2" strokeDasharray="3 4" />
       ))}
-      <path d={fillD} fill="url(#chartGrad)" />
-      <path d={d} stroke="#3a2204" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={fillPath} fill="url(#chartGrad)" />
+      <path d={path} stroke="#3a2204" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx={points[points.length - 1][0]} cy={points[points.length - 1][1]} r="5" fill="#facc18" stroke="#3a2204" strokeWidth="2" />
     </svg>
   )
@@ -115,9 +186,34 @@ function App() {
   const [beginner, setBeginner] = useState(true)
   const [active, setActive] = useState('home')
   const [picked, setPicked] = useState<number | null>(null)
+  const [marketData, setMarketData] = useState<MarketData>(defaultMarketData)
+  const [dataSource, setDataSource] = useState<'Yahoo Finance' | '기본 데이터'>('기본 데이터')
 
   useEffect(() => {
-    document.title = '투자 한입 대시보드'
+    document.title = '투자 한입 대시보드 · Yahoo Finance'
+
+    let ignore = false
+
+    fetch('/market-data.json', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load market data: ${response.status}`)
+        }
+        return response.json() as Promise<MarketData>
+      })
+      .then((payload) => {
+        if (ignore) return
+        setMarketData(payload)
+        setDataSource('Yahoo Finance')
+      })
+      .catch(() => {
+        if (ignore) return
+        setDataSource('기본 데이터')
+      })
+
+    return () => {
+      ignore = true
+    }
   }, [])
 
   const whySummary = useMemo(
@@ -182,7 +278,7 @@ function App() {
         <header className="header">
           <div>
             <div className="header-title">대시보드</div>
-            <div className="header-date">2026년 5월 5일 화요일 · 장 마감 14:32</div>
+            <div className="header-date">{marketData.generatedAtLabel}</div>
           </div>
           <div className="search">
             <span className="search-icon">⌕</span>
@@ -211,7 +307,7 @@ function App() {
               </div>
             </div>
             <div className="indicators-page">
-              {indicators.map((indicator) => (
+              {marketData.indicators.map((indicator) => (
                 <div key={indicator.label} className="indicator">
                   <div className="indicator-label">{indicator.label}</div>
                   <div className="indicator-value">{indicator.value}</div>
@@ -219,7 +315,7 @@ function App() {
                     {indicator.change} ({indicator.pct})
                   </div>
                   <div className="indicator-spark">
-                    <Sparkline data={[1, 3, 2, 4, 3, 5, 4, 6]} />
+                    <Sparkline data={indicator.series} />
                   </div>
                 </div>
               ))}
@@ -241,43 +337,41 @@ function App() {
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">2</span> 내가 보고있는 종목</div>
-                <div className="card-title">삼성전자 차트 분석</div>
-                {beginner && <div className="card-sub">주가 흐름과 핵심 지표를 같이 볼 수 있어요.</div>}
+                <div className="card-title">{marketData.chart.name} 차트 분석</div>
+                {beginner && <div className="card-sub">{marketData.chart.note}</div>}
               </div>
-              <div className="chart-tabs">
-                {['1D', '1W', '1M'].map((tab) => (
-                  <button key={tab} className={`chart-tab ${tab === '1D' ? 'active' : ''}`}>{tab}</button>
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                <div className="chart-tabs">
+                  {['1D', '1W', '1M'].map((tab) => (
+                    <button key={tab} className={`chart-tab ${tab === '1D' ? 'active' : ''}`}>{tab}</button>
+                  ))}
+                </div>
+                <span className="quiz-tag">{marketData.marketStatus.label}</span>
+                <span className="card-action">{dataSource}</span>
               </div>
             </div>
             <div className="chart-stock-row">
               <div>
-                <div className="chart-symbol">005930 · KOSPI</div>
-                <div className="chart-name">삼성전자</div>
+                <div className="chart-symbol">{marketData.chart.symbol} · KOSPI</div>
+                <div className="chart-name">{marketData.chart.name}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div className="chart-price">72,400 <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>KRW</span></div>
-                <div className="chart-delta">+1,300 (+1.83%) ▲ 오늘</div>
+                <div className="chart-price">{marketData.chart.price} <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{marketData.chart.currency}</span></div>
+                <div className="chart-delta">{marketData.chart.change} ({marketData.chart.percent}) ▲ 오늘</div>
               </div>
             </div>
-            <div className="chart-area"><ChartArea /></div>
+            <div className="chart-area"><ChartArea data={marketData.chart.series} /></div>
             <div className="chart-stats">
-              <div>
-                <div className="chart-stat-label">거래량</div>
-                <div className="chart-stat-value">14.2M</div>
-              </div>
-              <div>
-                <div className="chart-stat-label">시가총액</div>
-                <div className="chart-stat-value">432조</div>
-              </div>
-              <div>
-                <div className="chart-stat-label">PER</div>
-                <div className="chart-stat-value">14.8x</div>
-              </div>
-              <div>
-                <div className="chart-stat-label">52주 변동</div>
-                <div className="chart-stat-value">68,000–86,500</div>
-              </div>
+              {marketData.chart.stats.map((stat) => (
+                <div key={stat.label}>
+                  <div className="chart-stat-label">{stat.label}</div>
+                  <div className="chart-stat-value">{stat.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="glossary-mini">
+              {marketData.marketStatus.reasonText}
+              {marketData.marketStatus.riskReasons.length > 0 ? ` · ${marketData.marketStatus.riskReasons.join(' / ')}` : ''}
             </div>
           </section>
 
@@ -312,15 +406,15 @@ function App() {
               </div>
             </div>
             <div className="watch-list">
-              {watchlist.map((item) => (
+              {marketData.watchlist.map((item) => (
                 <div key={item.symbol} className="watch-item">
-                  <div className="watch-icon">{item.symbol.slice(0, 2)}</div>
+                  <div className="watch-icon">{item.name.slice(0, 2).toUpperCase()}</div>
                   <div className="watch-info">
                     <div className="watch-name">{item.name}</div>
                     <div className="watch-symbol">{item.symbol}</div>
                   </div>
                   <div className="watch-spark">
-                    <Sparkline data={[1, 2, 1, 3, 2, 4, 3, 5]} />
+                    <Sparkline data={item.series} />
                   </div>
                   <div className="watch-price">
                     <div className="watch-price-val">{item.price}</div>
