@@ -570,6 +570,10 @@ function App() {
   const [hoverHelp, setHoverHelp] = useState<HoverHelp | null>(null)
   const [whyOpen, setWhyOpen] = useState(false)
   const [whyPropOpen, setWhyPropOpen] = useState(false)
+  const [chartTab, setChartTab] = useState<'1D' | '1W' | '1M' | '전체'>('1D')
+  const [selectedWatchItem, setSelectedWatchItem] = useState<WatchItem | null>(null)
+  const [chartSeries, setChartSeries] = useState<number[] | null>(null)
+  const [chartLoading, setChartLoading] = useState(false)
 
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
@@ -605,6 +609,42 @@ function App() {
     ],
     [],
   )
+
+  const displayChart = useMemo(() => {
+    if (!selectedWatchItem) return marketData.chart
+    return {
+      symbol: selectedWatchItem.symbol,
+      name: selectedWatchItem.name,
+      currency: selectedWatchItem.symbol.endsWith('.KS') ? 'KRW' : 'USD',
+      price: selectedWatchItem.price,
+      change: selectedWatchItem.chg,
+      percent: selectedWatchItem.chg,
+      series: selectedWatchItem.series,
+      stats: marketData.chart.stats,
+      note: marketData.chart.note,
+    }
+  }, [selectedWatchItem, marketData.chart])
+
+  useEffect(() => {
+    const symbol = selectedWatchItem?.symbol ?? marketData.chart.symbol
+    const controller = new AbortController()
+    setChartLoading(true)
+    setChartSeries(null)
+
+    fetch(`/api/chart/${encodeURIComponent(symbol)}/${encodeURIComponent(chartTab)}`, {
+      signal: controller.signal,
+    })
+      .then((r) => r.json() as Promise<{ series?: number[] }>)
+      .then((data) => {
+        if (data.series && data.series.length > 0) setChartSeries(data.series)
+      })
+      .catch(() => { /* API unavailable — falls back to static data */ })
+      .finally(() => setChartLoading(false))
+
+    return () => controller.abort()
+  }, [chartTab, selectedWatchItem, marketData.chart.symbol])
+
+  const displayedSeries = chartSeries ?? displayChart.series
 
   const startTour = () => {
     setTourStep(0)
@@ -817,8 +857,8 @@ function App() {
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">2</span> 내가 보고있는 종목</div>
-                <div className="card-title">{marketData.chart.name} 차트 분석</div>
-                {beginner && <div className="card-sub">{marketData.chart.note}</div>}
+                <div className="card-title">{displayChart.name} 차트 분석</div>
+                {beginner && <div className="card-sub">{displayChart.note}</div>}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -828,7 +868,7 @@ function App() {
                     </button>
                     <div className={`why-pop ${whyOpen ? 'show' : ''}`}>
                       <span className="why-pop-tag">왜 올랐을까?</span>
-                      <div className="why-pop-title">{marketData.chart.name} {marketData.chart.percent} 상승</div>
+                      <div className="why-pop-title">{displayChart.name} {displayChart.percent} 상승</div>
                       <div className="why-pop-text">HBM3E 양산 본격화 소식과 외국계 IB의 목표가 상향이 동시에 작용했습니다.</div>
                       <div className="why-pop-list">
                         <div className="why-pop-li">HBM3E 12단 적층 양산 발표</div>
@@ -838,8 +878,8 @@ function App() {
                     </div>
                   </div>
                   <div className="chart-tabs">
-                    {['1D', '1W', '1M'].map((tab) => (
-                      <button key={tab} className={`chart-tab ${tab === '1D' ? 'active' : ''}`}>{tab}</button>
+                    {(['1D', '1W', '1M', '전체'] as const).map((tab) => (
+                      <button key={tab} className={`chart-tab ${tab === chartTab ? 'active' : ''}`} onClick={() => setChartTab(tab)}>{tab}</button>
                     ))}
                   </div>
                 </div>
@@ -849,17 +889,24 @@ function App() {
             </div>
             <div className="chart-stock-row">
               <div>
-                <div className="chart-symbol">{marketData.chart.symbol} · KOSPI</div>
-                <div className="chart-name">{marketData.chart.name}</div>
+                <div className="chart-symbol">{displayChart.symbol} · {displayChart.currency === 'KRW' ? 'KOSPI' : 'NASDAQ'}</div>
+                <div className="chart-name">{displayChart.name}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div className="chart-price">{marketData.chart.price} <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{marketData.chart.currency}</span></div>
-                <div className="chart-delta">{marketData.chart.change} ({marketData.chart.percent}) ▲ 오늘</div>
+                <div className="chart-price">{displayChart.price} <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{displayChart.currency}</span></div>
+                <div className="chart-delta">{displayChart.change} ({displayChart.percent}) {displayChart.percent.startsWith('-') ? '▼' : '▲'} 오늘</div>
               </div>
             </div>
-            <div className="chart-area"><ChartArea data={marketData.chart.series} /></div>
+            <div className="chart-area" style={{ position: 'relative' }}>
+              <ChartArea data={displayedSeries} />
+              {chartLoading && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.6)', borderRadius: 8 }}>
+                  <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>불러오는 중…</span>
+                </div>
+              )}
+            </div>
             <div className="chart-stats">
-              {marketData.chart.stats.map((stat) => (
+              {displayChart.stats.map((stat) => (
                 <div
                   key={stat.label}
                   className={`chart-stat ${beginner && STAT_HELP[stat.label] ? 'has-help' : ''}`}
@@ -916,22 +963,29 @@ function App() {
               </div>
             </div>
             <div className="watch-list">
-              {marketData.watchlist.map((item) => (
-                <div key={item.symbol} className="watch-item">
-                  <div className="watch-icon">{item.name.slice(0, 2).toUpperCase()}</div>
-                  <div className="watch-info">
-                    <div className="watch-name">{item.name}</div>
-                    <div className="watch-symbol">{item.symbol}</div>
+              {marketData.watchlist.map((item) => {
+                const isSelected = selectedWatchItem?.symbol === item.symbol
+                return (
+                  <div
+                    key={item.symbol}
+                    className={`watch-item ${isSelected ? 'selected' : ''}`}
+                    onClick={() => setSelectedWatchItem(isSelected ? null : item)}
+                  >
+                    <div className="watch-icon">{item.name.slice(0, 2).toUpperCase()}</div>
+                    <div className="watch-info">
+                      <div className="watch-name">{item.name}</div>
+                      <div className="watch-symbol">{item.symbol}</div>
+                    </div>
+                    <div className="watch-spark">
+                      <Sparkline data={item.series} />
+                    </div>
+                    <div className="watch-price">
+                      <div className="watch-price-val">{item.price}</div>
+                      <div className={`watch-price-chg ${item.up ? 'up' : 'down'}`}>{item.chg}</div>
+                    </div>
                   </div>
-                  <div className="watch-spark">
-                    <Sparkline data={item.series} />
-                  </div>
-                  <div className="watch-price">
-                    <div className="watch-price-val">{item.price}</div>
-                    <div className={`watch-price-chg ${item.up ? 'up' : 'down'}`}>{item.chg}</div>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </section>
 

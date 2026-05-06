@@ -882,6 +882,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 6px;
 }
 .watch-item:hover { background: var(--bg); }
+.watch-item.selected { background: var(--point-soft); border-radius: 6px; }
+.watch-item.selected .watch-name { color: var(--accent); font-weight: 700; }
 .watch-item:last-child { border-bottom: none; }
 .watch-icon {
   width: 32px; height: 32px;
