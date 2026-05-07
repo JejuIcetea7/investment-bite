@@ -3,8 +3,7 @@
 const Sidebar = ({ active, setActive, beginner, setBeginner, onStartTour, onOpenSurvey }) => {
   const items = [
     { key: 'home', icon: 'home', label: '대시보드' },
-    { key: 'portfolio', icon: 'briefcase', label: '포트폴리오' },
-    { key: 'watch', icon: 'star', label: '관심 종목', badge: '6' },
+    { key: 'whole', icon: 'chart-bar', label: '전체 종목' },
     { key: 'news', icon: 'newspaper', label: '뉴스 & 리포트' },
     { key: 'alert', icon: 'bell', label: '알림' },
   ];
@@ -53,6 +52,11 @@ const Sidebar = ({ active, setActive, beginner, setBeginner, onStartTour, onOpen
       </nav>
 
       <div className="sidebar-bottom">
+        <div className="sidebar-pick">
+          <div className="know-feature-tag">Today's Pick</div>
+          <div className="sidebar-pick-title">복리의 마법: 72의 법칙</div>
+          <div className="sidebar-pick-desc">72를 연 수익률로 나누면 원금이 두 배가 되는 햇수가 나와요.</div>
+        </div>
         <div className="beginner-card" data-tour="beginner-toggle">
           <div className="beginner-row">
             <div>

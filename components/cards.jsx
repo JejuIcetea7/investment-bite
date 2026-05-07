@@ -157,11 +157,6 @@ const KnowledgeCard = ({ beginner }) => (
         </div>
       ))}
     </div>
-    <div className="know-feature">
-      <div className="know-feature-tag">★ Today's Pick</div>
-      <div className="know-feature-title">복리의 마법: 72의 법칙</div>
-      <div className="know-feature-desc">72를 연 수익률로 나누면 원금이 두 배가 되는 햇수가 나와요. 7%면 약 10년!</div>
-    </div>
   </div>
 );
 
