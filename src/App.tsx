@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import './App.css'
 
@@ -66,13 +66,7 @@ type TourStep = {
   title: string
   text: string
   pos: 'top' | 'bottom' | 'left' | 'right'
-}
-
-type SectionHelp = {
-  title: string
-  text: string
-  x: number
-  y: number
+  widgetKey?: DashboardWidgetKey
 }
 
 type MarketData = {
@@ -88,6 +82,16 @@ type HoverHelp = {
   text: string
   x: number
   y: number
+}
+
+const DASHBOARD_WIDGETS = ['watch', 'propensity', 'know', 'quiz'] as const
+type DashboardWidgetKey = (typeof DASHBOARD_WIDGETS)[number]
+
+const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
+  watch: '관심 종목',
+  propensity: '유저 투자성향',
+  know: '투자 상식 카드',
+  quiz: '투자 기초 퀴즈',
 }
 
 const defaultMarketData: MarketData = {
@@ -108,6 +112,12 @@ const defaultMarketData: MarketData = {
     { label: 'WTI', symbol: 'CL=F', value: '78.42', change: '+0.85', pct: '+1.10%', up: true, series: [2, 2.1, 2.2, 2.15, 2.25, 2.3, 2.32, 2.4] },
     { label: 'Bitcoin', symbol: 'BTC-USD', value: '92,341', change: '+1,820', pct: '+2.01%', up: true, series: [3, 3.4, 3.3, 3.6, 3.8, 4, 4.1, 4.3] },
     { label: 'VIX', symbol: '^VIX', value: '14.82', change: '-0.34', pct: '-2.24%', up: false, series: [2.2, 2.1, 2, 1.9, 1.8, 1.7, 1.6, 1.5] },
+    { label: 'NASDAQ', symbol: '^IXIC', value: '18,421', change: '-45.12', pct: '-0.24%', up: false, series: [2.8, 2.7, 2.6, 2.5, 2.7, 2.6, 2.4, 2.3] },
+    { label: 'KOSDAQ', symbol: '^KQ11', value: '789.24', change: '+5.18', pct: '+0.66%', up: true, series: [1.2, 1.3, 1.2, 1.4, 1.35, 1.45, 1.5, 1.6] },
+    { label: '금', symbol: 'GC=F', value: '2,384', change: '+12.30', pct: '+0.52%', up: true, series: [2, 2.1, 2.05, 2.2, 2.15, 2.25, 2.3, 2.4] },
+    { label: '닛케이', symbol: '^N225', value: '38,405', change: '-124', pct: '-0.32%', up: false, series: [3, 2.9, 2.8, 2.7, 2.75, 2.65, 2.6, 2.5] },
+    { label: 'EUR/USD', symbol: 'EURUSD=X', value: '1.0832', change: '+0.0021', pct: '+0.19%', up: true, series: [1.5, 1.52, 1.51, 1.54, 1.53, 1.55, 1.57, 1.58] },
+    { label: '미 국채10Y', symbol: '^TNX', value: '4.421%', change: '-0.032', pct: '-0.72%', up: false, series: [2.5, 2.4, 2.35, 2.3, 2.28, 2.22, 2.2, 2.15] },
   ],
   chart: {
     symbol: '005930.KS',
@@ -160,6 +170,30 @@ const INDICATOR_HELP: Record<string, { title: string; text: string }> = {
   VIX: {
     title: 'VIX',
     text: '시장 변동성 지수입니다. 높아질수록 불안 심리가 커졌다고 해석하는 경우가 많습니다.',
+  },
+  NASDAQ: {
+    title: 'NASDAQ',
+    text: '미국 기술주 중심 종합 지수입니다. AI·반도체·소프트웨어 섹터의 분위기를 빠르게 확인할 수 있습니다.',
+  },
+  KOSDAQ: {
+    title: 'KOSDAQ',
+    text: '국내 중소·벤처 기업 중심 시장입니다. 코스피와 함께 보면 국내 증시의 큰 그림이 보입니다.',
+  },
+  '금': {
+    title: '금 (Gold)',
+    text: '대표적인 안전자산입니다. 불확실성이 높아지거나 달러가 약해질 때 강세를 보이는 경향이 있습니다.',
+  },
+  '닛케이': {
+    title: '닛케이 225',
+    text: '일본을 대표하는 주가지수입니다. 엔화 흐름과 함께 아시아 증시 전체를 볼 때 참고합니다.',
+  },
+  'EUR/USD': {
+    title: 'EUR/USD',
+    text: '유로 대비 달러 환율입니다. 달러의 강약과 유럽 경기 흐름을 함께 읽을 때 봅니다.',
+  },
+  '미 국채10Y': {
+    title: '미국 10년물 국채 수익률',
+    text: '시장이 기대하는 장기 금리 수준입니다. 높아질수록 성장주 및 기술주에 부담이 생기는 경향이 있습니다.',
   },
 }
 
@@ -249,18 +283,28 @@ const TOUR_STEPS: TourStep[] = [
     title: '관심 종목',
     text: '내가 보는 종목의 가격과 추세를 빠르게 확인하세요.',
     pos: 'left',
+    widgetKey: 'watch',
   },
   {
     sel: '[data-tour="propensity"]',
     title: '투자성향 분석',
     text: '설문과 관심 종목을 바탕으로 나만의 투자 성향을 보여줍니다.',
     pos: 'top',
+    widgetKey: 'propensity',
+  },
+  {
+    sel: '[data-tour="know"]',
+    title: '투자 상식 카드',
+    text: '짧은 카드로 자주 나오는 투자 개념을 익혀보세요.',
+    pos: 'top',
+    widgetKey: 'know',
   },
   {
     sel: '[data-tour="quiz"]',
     title: '데일리 퀴즈',
     text: '짧은 퀴즈로 경제 상식을 늘려보세요.',
     pos: 'top',
+    widgetKey: 'quiz',
   },
   {
     sel: '[data-tour="beginner-toggle"]',
@@ -452,23 +496,36 @@ function SurveyModal({
 function TourOverlay({
   active,
   step,
+  steps,
   onNext,
   onSkip,
 }: {
   active: boolean
   step: number
+  steps: TourStep[]
   onNext: () => void
   onSkip: () => void
 }) {
   const [box, setBox] = useState<null | (TourStep & { x: number; y: number; w: number; h: number })>(null)
+
+  const CHAR_MAP: Record<string, string> = {
+    '[data-tour="propensity"]': '/charcter/투자성향_분석_아이콘png.png',
+    '[data-tour="know"]': '/charcter/공부하는_아이콘.png',
+    '[data-tour="quiz"]': '/charcter/투자_상식_카드_아이콘.png',
+    '[data-tour="news"]': '/charcter/뉴스_아이콘.png',
+  }
 
   useEffect(() => {
     if (!active) {
       return
     }
 
+    if (!steps[step]) {
+      return
+    }
+
     const update = () => {
-      const target = TOUR_STEPS[step]
+      const target = steps[step]
       const element = document.querySelector(target.sel)
       if (!element) {
         setBox(null)
@@ -486,7 +543,7 @@ function TourOverlay({
     }
 
     update()
-    const element = document.querySelector(TOUR_STEPS[step].sel)
+    const element = document.querySelector(steps[step].sel)
     if (element && 'scrollIntoView' in element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
@@ -498,9 +555,9 @@ function TourOverlay({
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
     }
-  }, [active, step])
+  }, [active, step, steps])
 
-  if (!active || !box) return null
+  if (!active || !box || !steps[step]) return null
 
   const cardWidth = 320
   const cardHeight = 180
@@ -524,9 +581,18 @@ function TourOverlay({
   left = Math.max(16, Math.min(left, viewportWidth - cardWidth - 16))
   top = Math.max(16, Math.min(top, viewportHeight - cardHeight - 16))
 
+  // compute character position outside the card (to the left when possible)
+  const charSrc = CHAR_MAP[box.sel]
+  const CHAR_SIZE = 140
+  const charLeft = Math.max(12, left - CHAR_SIZE - 12)
+  const charTop = top + 8
+
   return (
     <div className="tour-overlay show">
       <div className="tour-spot" style={{ left: box.x, top: box.y, width: box.w, height: box.h }} />
+      {charSrc && (
+        <img src={charSrc} className="tour-char-outside" style={{ left: charLeft, top: charTop, width: CHAR_SIZE, height: CHAR_SIZE }} alt="가이드 캐릭터" />
+      )}
       <div className="tour-card" style={{ left, top }}>
         <span className="tour-step-label">STEP {step + 1} / {TOUR_STEPS.length}</span>
         <div className="tour-title">{box.title}</div>
@@ -534,7 +600,7 @@ function TourOverlay({
         <div className="tour-foot">
           <button className="tour-skip" onClick={onSkip}>건너뛰기</button>
           <button className="btn-primary" onClick={onNext}>
-            {step === TOUR_STEPS.length - 1 ? '시작하기' : '다음'}
+            {step === steps.length - 1 ? '시작하기' : '다음'}
           </button>
         </div>
       </div>
@@ -555,6 +621,41 @@ function SectionHelpTooltip({ help }: { help: HoverHelp | null }) {
   )
 }
 
+function EditableWidgetShell({
+  widgetKey,
+  visible,
+  editMode,
+  onToggle,
+  children,
+}: {
+  widgetKey: DashboardWidgetKey
+  visible: boolean
+  editMode: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  if (!editMode && !visible) return null
+
+  return (
+    <div className={`editable-widget-shell ${editMode ? 'edit-mode' : ''} ${visible ? 'is-visible' : 'is-hidden'}`} data-widget={widgetKey}>
+      {editMode && (
+        <button type="button" className="editable-widget-toggle" onClick={onToggle} aria-pressed={visible}>
+          {visible ? '숨기기' : '보이기'}
+        </button>
+      )}
+      {visible ? children : (
+        <div className="editable-widget-placeholder card">
+          <div className="editable-widget-placeholder-title">{DASHBOARD_WIDGET_LABELS[widgetKey]}</div>
+          <div className="editable-widget-placeholder-sub">편집 모드에서 다시 표시할 수 있어요.</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const IND_PER_PAGE = 6
+const IND_INTERVAL_MS = 10000
+
 function App() {
   const [beginner, setBeginner] = useState(true)
   const [active, setActive] = useState('home')
@@ -574,6 +675,27 @@ function App() {
   const [selectedWatchItem, setSelectedWatchItem] = useState<WatchItem | null>(null)
   const [chartSeries, setChartSeries] = useState<number[] | null>(null)
   const [chartLoading, setChartLoading] = useState(false)
+  const [indPage, setIndPage] = useState(0)
+  const [indPlaying, setIndPlaying] = useState(true)
+  const [indResetKey, setIndResetKey] = useState(0)
+  const [dashboardEditMode, setDashboardEditMode] = useState(false)
+  const [hiddenWidgets, setHiddenWidgets] = useState<DashboardWidgetKey[]>(() => {
+    if (typeof window === 'undefined') return []
+
+    try {
+      const raw = window.localStorage.getItem('dashboard-hidden-widgets')
+      if (!raw) return []
+
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) return []
+
+      return parsed.filter((item): item is DashboardWidgetKey => DASHBOARD_WIDGETS.includes(item as DashboardWidgetKey))
+    } catch {
+      return []
+    }
+  })
+  const isWholeView = active === 'whole'
+  const [loadingVisible, setLoadingVisible] = useState(true)
 
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
@@ -596,11 +718,24 @@ function App() {
         if (ignore) return
         setDataSource('기본 데이터')
       })
+      .finally(() => {
+        if (ignore) return
+        // keep loading screen visible a short while for smoothness
+        setTimeout(() => setLoadingVisible(false), 350)
+      })
 
     return () => {
       ignore = true
     }
   }, [])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('dashboard-hidden-widgets', JSON.stringify(hiddenWidgets))
+    } catch {
+      // Ignore storage failures and keep the UI usable.
+    }
+  }, [hiddenWidgets])
 
   const whySummary = useMemo(
     () => [
@@ -628,8 +763,6 @@ function App() {
   useEffect(() => {
     const symbol = selectedWatchItem?.symbol ?? marketData.chart.symbol
     const controller = new AbortController()
-    setChartLoading(true)
-    setChartSeries(null)
 
     fetch(`/api/chart/${encodeURIComponent(symbol)}/${encodeURIComponent(chartTab)}`, {
       signal: controller.signal,
@@ -645,6 +778,31 @@ function App() {
   }, [chartTab, selectedWatchItem, marketData.chart.symbol])
 
   const displayedSeries = chartSeries ?? displayChart.series
+  const indTotalPages = Math.max(1, Math.ceil(marketData.indicators.length / IND_PER_PAGE))
+  const safeIndPage = Math.min(indPage, indTotalPages - 1)
+  const visibleTourSteps = useMemo(
+    () => TOUR_STEPS.filter((step) => !step.widgetKey || !hiddenWidgets.includes(step.widgetKey)),
+    [hiddenWidgets],
+  )
+  const safeTourStep = Math.min(tourStep, visibleTourSteps.length - 1)
+
+  useEffect(() => {
+    if (!indPlaying) return
+    const id = setInterval(() => {
+      setIndPage((p) => (p + 1) % indTotalPages)
+    }, IND_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [indPlaying, indResetKey, indTotalPages])
+
+  const goPrevIndicatorPage = () => {
+    setIndPage((p) => (p - 1 + indTotalPages) % indTotalPages)
+    setIndResetKey((v) => v + 1)
+  }
+
+  const goNextIndicatorPage = () => {
+    setIndPage((p) => (p + 1) % indTotalPages)
+    setIndResetKey((v) => v + 1)
+  }
 
   const startTour = () => {
     setTourStep(0)
@@ -652,7 +810,7 @@ function App() {
   }
 
   const nextTourStep = () => {
-    if (tourStep >= TOUR_STEPS.length - 1) {
+    if (safeTourStep >= visibleTourSteps.length - 1) {
       setTourActive(false)
       return
     }
@@ -690,6 +848,14 @@ function App() {
     setPropensityOpen(true)
   }
 
+  const toggleDashboardWidget = (widgetKey: DashboardWidgetKey) => {
+    setHiddenWidgets((current) => (
+      current.includes(widgetKey)
+        ? current.filter((item) => item !== widgetKey)
+        : [...current, widgetKey]
+    ))
+  }
+
   const closePropensity = () => {
     setPropensityOpen(false)
   }
@@ -721,6 +887,15 @@ function App() {
 
   return (
     <div className={`app ${beginner ? 'beginner' : 'pro'}`}>
+      {loadingVisible && (
+        <div className="loading-overlay">
+          <div className="loading-bg" />
+          <div className="loading-center">
+            <img src="/charcter/대표_문구.png" alt="대표 문구" className="loading-main-img" />
+            <img src="/charcter/진입_아이콘.png" alt="진입 아이콘" className="loading-icon" />
+          </div>
+        </div>
+      )}
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">투</div>
@@ -743,8 +918,7 @@ function App() {
           <div className="nav-label">Menu</div>
           {[
             ['home', '대시보드'],
-            ['portfolio', '포트폴리오'],
-            ['watch', '관심 종목'],
+            ['whole', '전체 종목'],
             ['news', '뉴스 & 리포트'],
           ].map(([key, label]) => (
             <button key={key} className={`nav-item ${active === key ? 'active' : ''}`} onClick={() => setActive(key)}>
@@ -756,6 +930,10 @@ function App() {
 
         <nav className="nav">
           <div className="nav-label">Tools</div>
+          <button className={`nav-item ${dashboardEditMode ? 'active' : ''}`} onClick={() => setDashboardEditMode((value) => !value)}>
+            <span className="nav-icon">🧩</span>
+            <span>{dashboardEditMode ? '편집 종료' : '대시보드 편집'}</span>
+          </button>
           <button className="nav-item" onClick={openPropensity}>
             <span className="nav-icon">✨</span>
             <span>투자성향 분석</span>
@@ -767,6 +945,11 @@ function App() {
         </nav>
 
         <div className="sidebar-bottom">
+          <div className="sidebar-pick">
+            <div className="know-feature-tag">Today's Pick</div>
+            <div className="sidebar-pick-title">복리의 마법: 72의 법칙</div>
+            <div className="sidebar-pick-desc">72를 연 수익률로 나누면 원금이 두 배가 되는 햇수가 나와요.</div>
+          </div>
           <div className="beginner-card">
             <div className="beginner-row">
               <div>
@@ -809,12 +992,25 @@ function App() {
                 {beginner && <div className="card-sub">주요 지수와 환율, 위험지표를 한눈에 볼 수 있어요.</div>}
               </div>
               <div className="ind-pager-controls">
-                <button className="ind-arrow">›</button>
-                <button className="ind-arrow">›</button>
+                <button
+                  className="ind-arrow"
+                  onClick={goPrevIndicatorPage}
+                  aria-label="이전"
+                >‹</button>
+                <button
+                  className="ind-play"
+                  onClick={() => { setIndPlaying((v) => !v); setIndResetKey((v) => v + 1) }}
+                  aria-label={indPlaying ? '일시정지' : '재생'}
+                >{indPlaying ? '⏸' : '▶'}</button>
+                <button
+                  className="ind-arrow"
+                  onClick={goNextIndicatorPage}
+                  aria-label="다음"
+                >›</button>
               </div>
             </div>
             <div className="indicators-page">
-              {marketData.indicators.map((indicator) => (
+              {marketData.indicators.slice(indPage * IND_PER_PAGE, (indPage + 1) * IND_PER_PAGE).map((indicator) => (
                 <div
                   key={indicator.label}
                   className="indicator"
@@ -840,19 +1036,82 @@ function App() {
                 </div>
               ))}
             </div>
+            <div className="ind-progress-bar">
+              {indPlaying && (
+                <div
+                  key={indPage}
+                  className="ind-progress-bar-fill"
+                  style={{ '--ind-dur': `${IND_INTERVAL_MS}ms` } as React.CSSProperties}
+                />
+              )}
+            </div>
             <div className="ind-pager-foot">
               <div className="ind-page-count">
-                <span className="ind-page-num">01</span>
+                <span className="ind-page-num">{String(safeIndPage + 1).padStart(2, '0')}</span>
                 <span className="ind-page-sep">/</span>
-                <span className="ind-page-total">01</span>
+                <span className="ind-page-total">{String(indTotalPages).padStart(2, '0')}</span>
                 <span className="ind-page-label">페이지</span>
               </div>
               <div className="ind-dots">
-                <button className="ind-dot active" />
+                {Array.from({ length: indTotalPages }).map((_, p) => (
+                  <button
+                    key={p}
+                    className={`ind-dot ${p === safeIndPage ? 'active' : ''}`}
+                    onClick={() => { setIndPage(p); setIndResetKey((v) => v + 1) }}
+                    aria-label={`페이지 ${p + 1}`}
+                  />
+                ))}
               </div>
             </div>
           </section>
 
+          {isWholeView && (
+            <section className="whole-panel card" data-tour="whole-page">
+              <div className="whole-panel-head">
+                <div>
+                  <div className="card-num"><span className="card-num-dot">0</span> 전체 종목</div>
+                  <div className="whole-panel-title">Yahoo Finance 종목 차트 페이지</div>
+                  <div className="whole-panel-sub">실시간 갱신된 Yahoo Finance 시세를 바탕으로 여러 종목의 흐름을 비교해 볼 수 있어요.</div>
+                </div>
+                <div className="whole-panel-badge">{marketData.watchlist.length} stocks · live snapshot</div>
+              </div>
+              <div className="whole-panel-grid">
+                {marketData.watchlist.map((item) => {
+                  const isSelected = selectedWatchItem?.symbol === item.symbol
+                  return (
+                    <button
+                      key={item.symbol}
+                      className={`whole-stock-card ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        setChartLoading(true)
+                        setSelectedWatchItem(isSelected ? null : item)
+                      }}
+                    >
+                      <div className="whole-stock-top">
+                        <div>
+                          <div className="whole-stock-name">{item.name}</div>
+                          <div className="whole-stock-symbol">{item.symbol}</div>
+                        </div>
+                        <div className={`whole-stock-chip ${item.up ? 'up' : 'down'}`}>
+                          {item.up ? '▲' : '▼'} {item.chg}
+                        </div>
+                      </div>
+                      <div className="whole-stock-price-row">
+                        <div className="whole-stock-price">{item.price}</div>
+                        <div className="whole-stock-label">Yahoo Finance chart</div>
+                      </div>
+                      <div className="whole-stock-chart">
+                        <Sparkline data={item.series} />
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          )}
+
+          {!isWholeView && (
+            <>
           <section className="card chart-card" data-tour="chart">
             <div className="card-head">
               <div className="card-head-left">
@@ -879,7 +1138,16 @@ function App() {
                   </div>
                   <div className="chart-tabs">
                     {(['1D', '1W', '1M', '전체'] as const).map((tab) => (
-                      <button key={tab} className={`chart-tab ${tab === chartTab ? 'active' : ''}`} onClick={() => setChartTab(tab)}>{tab}</button>
+                      <button
+                        key={tab}
+                        className={`chart-tab ${tab === chartTab ? 'active' : ''}`}
+                        onClick={() => {
+                          setChartLoading(true)
+                          setChartTab(tab)
+                        }}
+                      >
+                        {tab}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -954,6 +1222,7 @@ function App() {
             </div>
           </section>
 
+          <EditableWidgetShell widgetKey="watch" visible={!hiddenWidgets.includes('watch')} editMode={dashboardEditMode} onToggle={() => toggleDashboardWidget('watch')}>
           <section className="card" data-tour="watch">
             <div className="card-head">
               <div className="card-head-left">
@@ -969,7 +1238,10 @@ function App() {
                   <div
                     key={item.symbol}
                     className={`watch-item ${isSelected ? 'selected' : ''}`}
-                    onClick={() => setSelectedWatchItem(isSelected ? null : item)}
+                    onClick={() => {
+                      setChartLoading(true)
+                      setSelectedWatchItem(isSelected ? null : item)
+                    }}
                   >
                     <div className="watch-icon">{item.name.slice(0, 2).toUpperCase()}</div>
                     <div className="watch-info">
@@ -988,7 +1260,9 @@ function App() {
               })}
             </div>
           </section>
+          </EditableWidgetShell>
 
+          <EditableWidgetShell widgetKey="propensity" visible={!hiddenWidgets.includes('propensity')} editMode={dashboardEditMode} onToggle={() => toggleDashboardWidget('propensity')}>
           <section className="card" data-tour="propensity">
             <div className="card-head">
               <div className="card-head-left">
@@ -1070,8 +1344,10 @@ function App() {
               </div>
             )}
           </section>
+          </EditableWidgetShell>
 
-          <section className="card" data-tour="quiz">
+          <EditableWidgetShell widgetKey="know" visible={!hiddenWidgets.includes('know')} editMode={dashboardEditMode} onToggle={() => toggleDashboardWidget('know')}>
+          <section className="card" data-tour="know">
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">6</span> 투자 상식 카드</div>
@@ -1087,15 +1363,12 @@ function App() {
                 </div>
               ))}
             </div>
-            <div className="know-feature">
-              <div className="know-feature-tag">Today's Pick</div>
-              <div className="know-feature-title">복리의 마법: 72의 법칙</div>
-              <div className="know-feature-desc">72를 연 수익률로 나누면 원금이 두 배가 되는 햇수가 나와요. 7%면 약 10년!</div>
-            </div>
             <div className="glossary-mini">{whySummary[0]}</div>
           </section>
+          </EditableWidgetShell>
 
-          <section className="card">
+          <EditableWidgetShell widgetKey="quiz" visible={!hiddenWidgets.includes('quiz')} editMode={dashboardEditMode} onToggle={() => toggleDashboardWidget('quiz')}>
+          <section className="card" data-tour="quiz">
             <div className="card-head">
               <div className="card-head-left">
                 <div className="card-num"><span className="card-num-dot">7</span> 투자 기초 퀴즈</div>
@@ -1129,11 +1402,14 @@ function App() {
               <span>3/5</span>
             </div>
           </section>
+          </EditableWidgetShell>
+            </>
+          )}
         </div>
       </main>
 
       <SectionHelpTooltip help={hoverHelp} />
-      <TourOverlay active={tourActive} step={tourStep} onNext={nextTourStep} onSkip={skipTour} />
+      <TourOverlay active={tourActive} step={safeTourStep} steps={visibleTourSteps} onNext={nextTourStep} onSkip={skipTour} />
       <SurveyModal
         open={propensityOpen}
         step={propensityStep}

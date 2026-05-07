@@ -26,6 +26,12 @@ const indicatorSpecs = [
   { label: 'WTI', symbol: 'CL=F', currency: 'USD' },
   { label: 'Bitcoin', symbol: 'BTC-USD', currency: 'USD' },
   { label: 'VIX', symbol: '^VIX', currency: 'USD' },
+  { label: 'NASDAQ', symbol: '^IXIC', currency: 'USD' },
+  { label: 'KOSDAQ', symbol: '^KQ11', currency: 'KRW' },
+  { label: '금', symbol: 'GC=F', currency: 'USD' },
+  { label: '닛케이', symbol: '^N225', currency: 'JPY' },
+  { label: 'EUR/USD', symbol: 'EURUSD=X', currency: 'USD' },
+  { label: '미 국채10Y', symbol: '^TNX', currency: 'USD' },
 ]
 
 const watchlistSpecs = [
