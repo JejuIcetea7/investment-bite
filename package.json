@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "sync:market": "node scripts/update-market-data.mjs",
-    "predev": "npm run sync:market",
-    "prebuild": "npm run sync:market",
-    "prepreview": "npm run sync:market",
+    "predev": "npm run sync:market || echo \"market sync failed; using cached data\"",
+    "prebuild": "npm run sync:market || echo \"market sync failed; using cached data\"",
+    "prepreview": "npm run sync:market || echo \"market sync failed; using cached data\"",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

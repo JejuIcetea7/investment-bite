@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-10",
+  "title": "데일리 챌린지",
+  "description": "초보 투자자를 위한 가벼운 투자 상식 퀴즈",
+  "quizzes": [
+    {
+      "id": "ox-diversification-001",
+      "type": "ox",
+      "category": "투자 기초",
+      "difficulty": "easy",
+      "question": "분산 투자는 한 종목에 모든 돈을 넣는 것이다.",
+      "options": ["O", "X"],
+      "answerIndex": 1,
+      "explanation": "분산 투자는 여러 자산에 나누어 투자해 위험을 줄이는 방법입니다."
+    },
+    {
+      "id": "ox-etf-001",
+      "type": "ox",
+      "category": "상품 이해",
+      "difficulty": "easy",
+      "question": "ETF는 주식처럼 사고팔 수 있는 펀드이다.",
+      "options": ["O", "X"],
+      "answerIndex": 0,
+      "explanation": "ETF는 거래소에 상장되어 주식처럼 매매할 수 있습니다."
+    },
+    {
+      "id": "ox-interest-rate-001",
+      "type": "ox",
+      "category": "경제 상식",
+      "difficulty": "easy",
+      "question": "금리가 오르면 대출 이자 부담이 커질 수 있다.",
+      "options": ["O", "X"],
+      "answerIndex": 0,
+      "explanation": "금리가 오르면 대출 이자도 함께 오를 가능성이 큽니다."
+    },
+    {
+      "id": "ox-loss-risk-001",
+      "type": "ox",
+      "category": "리스크",
+      "difficulty": "easy",
+      "question": "주식 투자는 원금 손실이 전혀 없다.",
+      "options": ["O", "X"],
+      "answerIndex": 1,
+      "explanation": "주식은 가격이 변하기 때문에 원금 손실이 생길 수 있습니다."
+    },
+    {
+      "id": "ox-dividend-001",
+      "type": "ox",
+      "category": "투자 기초",
+      "difficulty": "easy",
+      "question": "배당금은 회사가 이익 일부를 주주에게 나누는 돈이다.",
+      "options": ["O", "X"],
+      "answerIndex": 0,
+      "explanation": "배당금은 기업이 주주에게 지급하는 이익 배분입니다."
+    },
+    {
+      "id": "mc-per-001",
+      "type": "multiple_choice",
+      "category": "지표 이해",
+      "difficulty": "easy",
+      "question": "PER은 무엇을 볼 때 주로 사용할까요?",
+      "options": ["주가와 이익의 관계", "하루 거래량", "환율의 방향"],
+      "answerIndex": 0,
+      "explanation": "PER은 주가가 기업 이익 대비 어느 정도인지 볼 때 사용합니다."
+    },
+    {
+      "id": "mc-volume-001",
+      "type": "multiple_choice",
+      "category": "시장 지표",
+      "difficulty": "easy",
+      "question": "거래량은 무엇을 뜻할까요?",
+      "options": ["사고팔린 주식 수", "회사의 총자산", "연간 배당금"],
+      "answerIndex": 0,
+      "explanation": "거래량은 일정 기간 동안 거래된 주식 수를 의미합니다."
+    },
+    {
+      "id": "mc-bond-001",
+      "type": "multiple_choice",
+      "category": "상품 이해",
+      "difficulty": "easy",
+      "question": "채권은 어떤 성격에 가까울까요?",
+      "options": ["돈을 빌려주고 이자를 받는 증서", "회사의 지분", "외국 돈을 사는 거래"],
+      "answerIndex": 0,
+      "explanation": "채권은 발행자에게 돈을 빌려주고 이자를 받는 금융상품입니다."
+    },
+    {
+      "id": "mc-exchange-rate-001",
+      "type": "multiple_choice",
+      "category": "경제 상식",
+      "difficulty": "easy",
+      "question": "환율은 무엇의 가격을 나타낼까요?",
+      "options": ["다른 나라 돈의 가격", "주식 한 주의 가격", "원유 한 배럴의 가격"],
+      "answerIndex": 0,
+      "explanation": "환율은 한 나라 돈을 다른 나라 돈으로 바꿀 때의 비율입니다."
+    },
+    {
+      "id": "mc-long-term-001",
+      "type": "multiple_choice",
+      "category": "투자 습관",
+      "difficulty": "easy",
+      "question": "장기 투자의 장점으로 가장 알맞은 것은?",
+      "options": ["단기 변동에 덜 흔들릴 수 있다", "손실이 절대 나지 않는다", "항상 가장 높은 수익을 낸다"],
+      "answerIndex": 0,
+      "explanation": "장기 투자는 짧은 가격 변동에 덜 흔들리도록 도와줄 수 있습니다."
+    }
+  ]
+}
