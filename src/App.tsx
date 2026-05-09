@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import './App.css'
 
+type KnowledgeCard = {
+  id: string
+  term: string
+  category: string
+  description: string
+}
+
 type Indicator = {
   label: string
   symbol: string
@@ -67,6 +74,25 @@ type TourStep = {
   text: string
   pos: 'top' | 'bottom' | 'left' | 'right'
   widgetKey?: DashboardWidgetKey
+}
+
+type DailyQuiz = {
+  id: string
+  type: 'ox' | 'multiple_choice'
+  category: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  question: string
+  options: string[]
+  answerIndex: number
+  explanation: string
+}
+
+type DailyQuizData = {
+  version: number
+  updatedAt: string
+  title: string
+  description: string
+  quizzes: DailyQuiz[]
 }
 
 type MarketData = {
@@ -223,22 +249,6 @@ const news = [
   { tag: '정책', title: '한국은행 총재 "당분간 통화정책 신중 기조 유지"', meta: '연합뉴스 · 3시간 전' },
 ]
 
-const knowCards = [
-  { num: '01', title: 'PER이란?' },
-  { num: '02', title: '배당주 vs 성장주' },
-  { num: '03', title: 'ETF 한눈에' },
-  { num: '04', title: '분산 투자란?' },
-]
-
-const quiz = {
-  question: '월급의 일부를 매달 같은 금액으로 정해진 종목에 투자하는 방식을 무엇이라고 할까요?',
-  options: [
-    { letter: 'A', text: '몰빵 투자', correct: false },
-    { letter: 'B', text: '적립식 투자 (DCA)', correct: true },
-    { letter: 'C', text: '레버리지 투자', correct: false },
-    { letter: 'D', text: '단타 매매', correct: false },
-  ],
-}
 
 const PROPENSITY_QUESTIONS: PropensityQuestion[] = [
   {
@@ -659,9 +669,12 @@ const IND_INTERVAL_MS = 10000
 function App() {
   const [beginner, setBeginner] = useState(true)
   const [active, setActive] = useState('home')
-  const [picked, setPicked] = useState<number | null>(null)
   const [marketData, setMarketData] = useState<MarketData>(defaultMarketData)
   const [dataSource, setDataSource] = useState<'Yahoo Finance' | '기본 데이터'>('기본 데이터')
+  const [dailyQuizzes, setDailyQuizzes] = useState<DailyQuiz[]>([])
+  const [dailyQuizIndex, setDailyQuizIndex] = useState(0)
+  const [selectedDailyAnswer, setSelectedDailyAnswer] = useState<number | null>(null)
+  const [dailyQuizCorrectCount, setDailyQuizCorrectCount] = useState(0)
   const [tourActive, setTourActive] = useState(false)
   const [tourStep, setTourStep] = useState(0)
   const [propensityOpen, setPropensityOpen] = useState(false)
@@ -696,13 +709,15 @@ function App() {
   })
   const isWholeView = active === 'whole'
   const [loadingVisible, setLoadingVisible] = useState(true)
+  const [allKnowledgeCards, setAllKnowledgeCards] = useState<KnowledgeCard[]>([])
+  const [knowledgeCards, setKnowledgeCards] = useState<KnowledgeCard[]>([])
 
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
 
     let ignore = false
 
-    fetch('/market-data.json', { cache: 'no-store' })
+    fetch('/data/market-data.json', { cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) {
           throw new Error(`Failed to load market data: ${response.status}`)
@@ -730,20 +745,47 @@ function App() {
   }, [])
 
   useEffect(() => {
+    let ignore = false
+
+    fetch('/data/daily-quiz.json', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load daily quiz: ${response.status}`)
+        }
+        return response.json() as Promise<DailyQuizData>
+      })
+      .then((payload) => {
+        if (ignore) return
+        setDailyQuizzes(payload.quizzes)
+      })
+      .catch(() => {
+        if (ignore) return
+        setDailyQuizzes([])
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    fetch('/data/knowledge-cards.json')
+      .then((r) => r.json() as Promise<{ cards: KnowledgeCard[] }>)
+      .then(({ cards }) => {
+        setAllKnowledgeCards(cards)
+        const shuffled = [...cards].sort(() => Math.random() - 0.5)
+        setKnowledgeCards(shuffled.slice(0, 2))
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     try {
       window.localStorage.setItem('dashboard-hidden-widgets', JSON.stringify(hiddenWidgets))
     } catch {
       // Ignore storage failures and keep the UI usable.
     }
   }, [hiddenWidgets])
-
-  const whySummary = useMemo(
-    () => [
-      '관심 종목과 시황을 요약한 초보자용 대시보드입니다.',
-      '토글을 끄면 더 간결한 전문가 모드처럼 보입니다.',
-    ],
-    [],
-  )
 
   const displayChart = useMemo(() => {
     if (!selectedWatchItem) return marketData.chart
@@ -778,6 +820,11 @@ function App() {
   }, [chartTab, selectedWatchItem, marketData.chart.symbol])
 
   const displayedSeries = chartSeries ?? displayChart.series
+  const currentDailyQuiz = dailyQuizzes[dailyQuizIndex] ?? null
+  const isDailyQuizComplete = dailyQuizzes.length > 0 && dailyQuizIndex >= dailyQuizzes.length
+  const isDailyQuizAnswered = selectedDailyAnswer !== null
+  const dailyQuizSolvedCount = Math.min(dailyQuizIndex + (isDailyQuizAnswered ? 1 : 0), dailyQuizzes.length)
+  const dailyQuizProgress = dailyQuizzes.length > 0 ? (dailyQuizSolvedCount / dailyQuizzes.length) * 100 : 0
   const indTotalPages = Math.max(1, Math.ceil(marketData.indicators.length / IND_PER_PAGE))
   const safeIndPage = Math.min(indPage, indTotalPages - 1)
   const visibleTourSteps = useMemo(
@@ -856,6 +903,13 @@ function App() {
     ))
   }
 
+  const refreshKnowledgeCards = () => {
+    const currentIds = new Set(knowledgeCards.map((c) => c.id))
+    const pool = allKnowledgeCards.filter((c) => !currentIds.has(c.id))
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    setKnowledgeCards(shuffled.slice(0, 2))
+  }
+
   const closePropensity = () => {
     setPropensityOpen(false)
   }
@@ -883,6 +937,26 @@ function App() {
 
   const prevPropensityStep = () => {
     setPropensityStep((current) => Math.max(0, current - 1))
+  }
+
+  const pickDailyQuizAnswer = (answerIndex: number) => {
+    if (!currentDailyQuiz || isDailyQuizAnswered || isDailyQuizComplete) return
+
+    setSelectedDailyAnswer(answerIndex)
+    if (answerIndex === currentDailyQuiz.answerIndex) {
+      setDailyQuizCorrectCount((count) => count + 1)
+    }
+  }
+
+  const goNextDailyQuiz = () => {
+    setDailyQuizIndex((index) => index + 1)
+    setSelectedDailyAnswer(null)
+  }
+
+  const restartDailyQuiz = () => {
+    setDailyQuizIndex(0)
+    setSelectedDailyAnswer(null)
+    setDailyQuizCorrectCount(0)
   }
 
   return (
@@ -1354,16 +1428,17 @@ function App() {
                 <div className="card-title">오늘의 한 입 지식</div>
                 {beginner && <div className="card-sub">매일 바뀌는 짧은 투자 상식이에요.</div>}
               </div>
+              <button className="know-refresh-btn" onClick={refreshKnowledgeCards}>↻ 다른 카드 보기</button>
             </div>
-            <div className="know-cards">
-              {knowCards.map((card, index) => (
-                <div key={card.num} className={`know-mini k${index + 1}`}>
-                  <div className="know-mini-num">{card.num}</div>
-                  <div className="know-mini-title">{card.title}</div>
+            <div className="know-cards-stack">
+              {knowledgeCards.map((card) => (
+                <div key={card.id} className="know-card-item">
+                  <span className="know-card-category">{card.category}</span>
+                  <div className="know-card-term">{card.term}</div>
+                  <div className="know-card-desc">{card.description}</div>
                 </div>
               ))}
             </div>
-            <div className="glossary-mini">{whySummary[0]}</div>
           </section>
           </EditableWidgetShell>
 
@@ -1375,31 +1450,77 @@ function App() {
                 <div className="card-title">데일리 챌린지</div>
                 {beginner && <div className="card-sub">짧은 퀴즈로 경제 지식을 늘려보세요.</div>}
               </div>
-              <span className="quiz-tag">Day 3</span>
+              <span className="quiz-tag">
+                {dailyQuizzes.length > 0 ? `${dailyQuizSolvedCount}/${dailyQuizzes.length}` : 'Loading'}
+              </span>
             </div>
-            <div className="quiz-q">{quiz.question}</div>
-            <div className="quiz-options">
-              {quiz.options.map((option, index) => {
-                let className = 'quiz-opt'
-                if (picked !== null) {
-                  if (option.correct) className += ' correct'
-                  else if (picked === index) className += ' wrong'
-                }
+            {isDailyQuizComplete ? (
+              <div className="quiz-complete">
+                <div className="quiz-complete-label">데일리 챌린지 완료</div>
+                <div className="quiz-complete-score">
+                  {dailyQuizCorrectCount}/{dailyQuizzes.length}
+                </div>
+                <div className="quiz-feedback-text">
+                  오늘의 투자 상식 퀴즈를 모두 풀었어요!
+                </div>
+                <button className="btn-primary quiz-next-btn" onClick={restartDailyQuiz}>
+                  다시 풀기
+                </button>
+              </div>
+            ) : currentDailyQuiz ? (
+              <>
+                <div className="quiz-meta">
+                  <span>{currentDailyQuiz.category}</span>
+                  <span>{currentDailyQuiz.type === 'ox' ? 'O/X' : '3지선다'}</span>
+                </div>
+                <div className="quiz-q">{currentDailyQuiz.question}</div>
+                <div className="quiz-options">
+                  {currentDailyQuiz.options.map((option, index) => {
+                    const isCorrectAnswer = index === currentDailyQuiz.answerIndex
+                    const isSelectedWrong = selectedDailyAnswer === index && !isCorrectAnswer
+                    const optionLetter = currentDailyQuiz.type === 'ox' ? option : String.fromCharCode(65 + index)
+                    let className = 'quiz-opt'
 
-                return (
-                  <button key={option.letter} className={className} onClick={() => setPicked(index)}>
-                    <span className="quiz-opt-letter">{option.letter}</span>
-                    {option.text}
-                  </button>
-                )
-              })}
-            </div>
+                    if (isDailyQuizAnswered && isCorrectAnswer) className += ' correct'
+                    if (isDailyQuizAnswered && isSelectedWrong) className += ' wrong'
+
+                    return (
+                      <button
+                        key={`${currentDailyQuiz.id}-${option}`}
+                        className={className}
+                        onClick={() => pickDailyQuizAnswer(index)}
+                        disabled={isDailyQuizAnswered}
+                      >
+                        <span className="quiz-opt-letter">{optionLetter}</span>
+                        {option}
+                      </button>
+                    )
+                  })}
+                </div>
+                {isDailyQuizAnswered && (
+                  <div className={`quiz-feedback ${selectedDailyAnswer === currentDailyQuiz.answerIndex ? 'correct' : 'wrong'}`}>
+                    <div className="quiz-feedback-title">
+                      {selectedDailyAnswer === currentDailyQuiz.answerIndex ? '정답입니다' : '오답입니다'}
+                    </div>
+                    <div className="quiz-feedback-text">{currentDailyQuiz.explanation}</div>
+                    <button className="btn-primary quiz-next-btn" onClick={goNextDailyQuiz}>
+                      다음 문제
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="quiz-feedback">
+                <div className="quiz-feedback-title">퀴즈를 불러오는 중입니다</div>
+                <div className="quiz-feedback-text">잠시 후 다시 확인해주세요.</div>
+              </div>
+            )}
             <div className="quiz-progress">
               <span>오늘 진행</span>
               <div className="quiz-progress-track">
-                <div className="quiz-progress-fill" style={{ width: '60%' }} />
+                <div className="quiz-progress-fill" style={{ width: `${dailyQuizProgress}%` }} />
               </div>
-              <span>3/5</span>
+              <span>{dailyQuizSolvedCount}/{dailyQuizzes.length || 10}</span>
             </div>
           </section>
           </EditableWidgetShell>

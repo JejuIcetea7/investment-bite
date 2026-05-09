@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import YahooFinance from 'yahoo-finance2'
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
-const outputPath = path.resolve(rootDir, '../public/market-data.json')
+const outputPath = path.resolve(rootDir, '../public/data/market-data.json')
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 
 const KRW_PRICE_FORMATTER = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 2 })
