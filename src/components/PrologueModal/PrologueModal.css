@@ -1,0 +1,113 @@
+/* First-visit prologue */
+.prologue-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(26, 18, 8, 0.52);
+  backdrop-filter: blur(5px);
+}
+
+.prologue-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 401;
+  width: min(460px, calc(100vw - 32px));
+  transform: translate(-50%, -50%);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.prologue-visual {
+  width: 96px;
+  height: 96px;
+  border-radius: 24px;
+  background: var(--point-soft);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+}
+
+.prologue-visual img {
+  width: 82px;
+  height: 82px;
+  object-fit: contain;
+}
+
+.prologue-kicker {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--point-deep);
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.prologue-title {
+  margin: 8px 0 0;
+  color: var(--accent);
+  font-size: 24px;
+  line-height: 1.28;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.prologue-copy {
+  margin: 10px 0 22px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.prologue-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.prologue-input {
+  height: 48px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  padding: 0 14px;
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+  letter-spacing: 0;
+}
+
+.prologue-input:focus {
+  border-color: var(--point-deep);
+  box-shadow: 0 0 0 4px rgba(250, 204, 24, 0.22);
+}
+
+.prologue-input[aria-invalid="true"] {
+  border-color: var(--red);
+}
+
+.prologue-error {
+  margin-top: 8px;
+  color: var(--red);
+  font-size: 12px;
+}
+
+.prologue-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 18px;
+  height: 46px;
+}
+
+@media (max-width: 720px) {
+  .prologue-modal { padding: 24px; }
+  .prologue-title { font-size: 21px; }
+}
