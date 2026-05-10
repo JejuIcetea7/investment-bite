@@ -2,9 +2,9 @@
 
 const Sidebar = ({ active, setActive, beginner, setBeginner, onStartTour, onOpenSurvey }) => {
   const items = [
-    { key: 'home', icon: 'home', label: '대시보드' },
-    { key: 'whole', icon: 'chart-bar', label: '전체 종목' },
-    { key: 'news', icon: 'newspaper', label: '뉴스 & 리포트' },
+    { key: 'home', icon: 'home', label: '대시보드', tourKey: 'menu-dashboard' },
+    { key: 'whole', icon: 'chart-bar', label: '전체 종목', tourKey: 'menu-whole' },
+    { key: 'news', icon: 'newspaper', label: '뉴스 & 리포트', tourKey: 'menu-news' },
     { key: 'alert', icon: 'bell', label: '알림' },
   ];
   return (
@@ -31,7 +31,8 @@ const Sidebar = ({ active, setActive, beginner, setBeginner, onStartTour, onOpen
         {items.map(i => (
           <button key={i.key}
             className={`nav-item ${active === i.key ? 'active' : ''}`}
-            onClick={() => setActive(i.key)}>
+            onClick={() => setActive(i.key)}
+            data-tour={i.tourKey}>
             <span className="nav-icon"><Icon name={i.icon} size={17}/></span>
             <span>{i.label}</span>
             {i.badge && <span className="nav-badge">{i.badge}</span>}
@@ -41,7 +42,7 @@ const Sidebar = ({ active, setActive, beginner, setBeginner, onStartTour, onOpen
 
       <nav className="nav">
         <div className="nav-label">Tools</div>
-        <button className="nav-item" onClick={onOpenSurvey}>
+        <button className="nav-item" onClick={onOpenSurvey} data-tour="tool-propensity">
           <span className="nav-icon"><Icon name="sparkles" size={17}/></span>
           <span>투자성향 분석</span>
         </button>

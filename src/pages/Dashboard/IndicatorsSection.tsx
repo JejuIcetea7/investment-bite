@@ -39,16 +39,16 @@ export default function IndicatorsSection({
     <section className="indicators" data-tour="market-summary">
       <div className="card-head">
         <div className="card-head-left">
-          <div className="card-num"><span className="card-num-dot">1</span> 시장 요약</div>
+          <div className="card-num"><span className="card-num-dot">0</span>시장 요약</div>
           <div className="card-title">오늘의 경제 지수 현황</div>
           {beginner && <div className="card-sub">주요 지수와 환율, 위험지표를 한눈에 볼 수 있어요.</div>}
         </div>
         <div className="ind-pager-controls">
-          <button className="ind-arrow" onClick={goPrev} aria-label="이전">‹</button>
+          <button className="ind-arrow" onClick={goPrev} aria-label="이전">&lt;</button>
           <button className="ind-play" onClick={() => { setIndPlaying((v) => !v); setIndResetKey((v) => v + 1) }} aria-label={indPlaying ? '일시정지' : '재생'}>
             {indPlaying ? '⏸' : '▶'}
           </button>
-          <button className="ind-arrow" onClick={goNext} aria-label="다음">›</button>
+          <button className="ind-arrow" onClick={goNext} aria-label="다음">&gt;</button>
         </div>
       </div>
       <div className="indicators-page">

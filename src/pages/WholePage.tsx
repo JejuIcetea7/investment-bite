@@ -14,7 +14,7 @@ export default function WholePage({
     <section className="whole-panel card" data-tour="whole-page">
       <div className="whole-panel-head">
         <div>
-          <div className="card-num"><span className="card-num-dot">0</span> 전체 종목</div>
+          <div className="card-num"><span className="card-num-dot">1</span> 전체 종목</div>
           <div className="whole-panel-title">Yahoo Finance 종목 차트 페이지</div>
           <div className="whole-panel-sub">실시간 갱신된 Yahoo Finance 시세를 바탕으로 여러 종목의 흐름을 비교해 볼 수 있어요.</div>
         </div>

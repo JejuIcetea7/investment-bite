@@ -662,7 +662,21 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--accent);
   transition: all 0.15s;
 }
-.ind-arrow:first-child { transform: rotate(180deg); }
+.sidebar-logo-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 6px 0 18px;
+}
+
+.sidebar-logo-img {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
 .ind-arrow:hover:not(:disabled) { background: var(--point); border-color: var(--point); }
 .ind-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
 .ind-play {
@@ -1095,9 +1109,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 
 .chart-area {
-  height: 220px;
+  height: auto;
+  min-height: 260px;
   margin-top: 8px;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-stats {
@@ -1851,17 +1868,21 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 14px;
   padding: 18px;
   width: 320px;
+  min-height: 180px;
   box-shadow: var(--shadow-lg);
   transition: all 0.4s cubic-bezier(.2,.8,.2,1);
 }
 .tour-card { overflow: visible; }
 .tour-char-outside {
   position: absolute;
-  z-index: 210;
+  right: -70px;
+  top: -90px;
+  z-index: 1;
+  width: 140px;
+  height: 140px;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 8px 20px rgba(26,18,8,0.25));
-  transform-origin: center bottom;
 }
 .tour-step-label {
   display: inline-flex;
