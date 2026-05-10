@@ -401,6 +401,84 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: var(--bg);
   font-family: ui-monospace, monospace;
 }
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+  animation: search-pop 160ms ease-out;
+}
+.search-suggestion {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  text-align: left;
+  transition: background 0.16s, transform 0.16s;
+}
+.search-suggestion:hover {
+  background: var(--point-soft);
+  transform: translateY(-1px);
+}
+.search-suggestion-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.search-suggestion-name {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+.search-suggestion-symbol {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.search-suggestion-change {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.search-suggestion-change.up {
+  color: var(--red);
+  background: rgba(212, 69, 58, 0.09);
+}
+.search-suggestion-change.down {
+  color: var(--green);
+  background: rgba(30, 138, 91, 0.1);
+}
+.search-empty {
+  padding: 14px 12px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+@keyframes search-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .header-btn {
   width: 40px; height: 40px;
@@ -1954,6 +2032,9 @@ html { scroll-behavior: smooth; }
 .app.pro .search input { background: var(--card); color: var(--ink); }
 .app.pro .search input::placeholder { color: var(--muted); }
 .app.pro .search-kbd { background: #20180c; color: var(--muted); border-color: var(--line); }
+.app.pro .search-suggestions { background: rgba(26, 22, 14, 0.96); border-color: var(--line); }
+.app.pro .search-suggestion:hover { background: #20180c; }
+.app.pro .search-suggestion-name { color: var(--ink); }
 .app.pro .header-btn { color: var(--ink); }
 .app.pro .user-chip { color: var(--ink); }
 .app.pro .user-name { color: var(--ink); }
