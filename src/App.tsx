@@ -120,6 +120,28 @@ const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
   quiz: '투자 기초 퀴즈',
 }
 
+type NewsArticle = {
+  title: string
+  description: string
+  link: string
+  source: string
+  date: string
+  aiSummary: string
+  sentiment: 'positive' | 'neutral' | 'negative'
+  sentimentScore: number
+  keywords: string[]
+  stocks: string[]
+}
+
+type NewsData = {
+  generatedAt: string
+  topNews: NewsArticle[]
+  sectorNews: Record<string, NewsArticle[]>
+}
+
+const NEWS_SECTORS = ['AI', '반도체', '조선', '에너지', '헬스', '우주', '바이오', '방산'] as const
+type NewsSectorKey = typeof NEWS_SECTORS[number]
+
 const STOCK_ALIASES: Record<string, string[]> = {
   '005930.KS': ['삼성전자', '삼전', 'samsung', 'samsung electronics', '005930'],
   NVDA: ['nvidia', '엔비디아', '엔비', 'nvda'],
@@ -337,6 +359,151 @@ const TOUR_STEPS: TourStep[] = [
     pos: 'right',
   },
 ]
+
+function formatRelativeDate(isoDate: string): string {
+  const diffMs = Date.now() - new Date(isoDate).getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 60) return `${diffMin}분 전`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}시간 전`
+  return `${Math.floor(diffHr / 24)}일 전`
+}
+
+const SENTIMENT_CONFIG = {
+  positive: { label: '긍정', cls: 'sentiment-pos' },
+  neutral: { label: '중립', cls: 'sentiment-neu' },
+  negative: { label: '부정', cls: 'sentiment-neg' },
+} as const
+
+function NewsCard({ article, onClick }: { article: NewsArticle; onClick: () => void }) {
+  const { label, cls } = SENTIMENT_CONFIG[article.sentiment] ?? SENTIMENT_CONFIG.neutral
+  return (
+    <div className="news-card" onClick={onClick} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onClick()}>
+      <div className="news-card-top">
+        <span className={`news-sentiment ${cls}`}>{label}</span>
+        <span className="news-card-source">{article.source} · {formatRelativeDate(article.date)}</span>
+      </div>
+      <div className="news-card-title">{article.title}</div>
+      <div className="news-card-summary">{article.aiSummary || article.description}</div>
+      <div className="news-card-bottom">
+        <div className="news-card-tags">
+          {article.keywords.slice(0, 3).map(kw => <span key={kw} className="news-kw-tag">{kw}</span>)}
+          {article.stocks.slice(0, 2).map(s => <span key={s} className="news-stock-tag">{s}</span>)}
+        </div>
+        <span className="news-card-cta">자세히 →</span>
+      </div>
+    </div>
+  )
+}
+
+function NewsDetailModal({ article, onClose }: { article: NewsArticle; onClose: () => void }) {
+  const { label, cls } = SENTIMENT_CONFIG[article.sentiment] ?? SENTIMENT_CONFIG.neutral
+  const score = Math.max(10, Math.round(Math.abs(article.sentimentScore) * 100))
+  return (
+    <>
+      <div className="overlay show" onClick={onClose} />
+      <div className="modal show">
+        <div className="modal-head">
+          <div>
+            <div className="survey-step">{article.source} · {formatRelativeDate(article.date)}</div>
+            <div className="modal-title" style={{ marginTop: 6 }}>{article.title}</div>
+          </div>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="news-detail-sentiment-row">
+          <span className={`news-sentiment ${cls}`}>{label} 영향</span>
+          <div className="news-sentiment-bar-wrap">
+            <div className="news-sentiment-bar">
+              <div className={`news-sentiment-bar-fill ${article.sentiment}`} style={{ width: `${score}%` }} />
+            </div>
+            <span className="news-sentiment-score">{score}점</span>
+          </div>
+        </div>
+        <div className="news-detail-label">AI 요약</div>
+        <div className="news-detail-summary">{article.aiSummary || article.description}</div>
+        {(article.keywords.length > 0 || article.stocks.length > 0) && (
+          <div className="news-detail-tags">
+            {article.keywords.map(kw => <span key={kw} className="news-kw-tag">{kw}</span>)}
+            {article.stocks.map(s => <span key={s} className="news-stock-tag">{s}</span>)}
+          </div>
+        )}
+        <a href={article.link} target="_blank" rel="noopener noreferrer" className="news-detail-link">
+          원문 기사 보기 →
+        </a>
+      </div>
+    </>
+  )
+}
+
+function NewsPage({
+  newsData,
+  onCardClick,
+}: {
+  newsData: NewsData | null
+  onCardClick: (article: NewsArticle) => void
+}) {
+  const [selectedSector, setSelectedSector] = useState<NewsSectorKey>('AI')
+  const sectorArticles = newsData?.sectorNews[selectedSector] ?? []
+
+  return (
+    <div className="news-page">
+      <section className="news-section card">
+        <div className="card-head">
+          <div className="card-head-left">
+            <div className="card-num"><span className="card-num-dot">1</span> 주요 뉴스</div>
+            <div className="card-title">오늘의 증시 핵심 뉴스</div>
+            <div className="card-sub">국내외 주식시장에 영향을 주는 주요 뉴스를 모았어요.</div>
+          </div>
+        </div>
+        <div className="news-cards-list">
+          {newsData?.topNews && newsData.topNews.length > 0 ? (
+            newsData.topNews.map((article, i) => (
+              <NewsCard key={i} article={article} onClick={() => onCardClick(article)} />
+            ))
+          ) : (
+            <div className="news-empty">
+              <div className="news-empty-title">뉴스를 불러오는 중이에요</div>
+              <div className="news-empty-sub">npm run sync:news 를 실행하거나 잠시 후 새로고침해 주세요.</div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="news-section card">
+        <div className="card-head">
+          <div className="card-head-left">
+            <div className="card-num"><span className="card-num-dot">2</span> 섹터별 뉴스</div>
+            <div className="card-title">관심 섹터 뉴스</div>
+            <div className="card-sub">섹터를 선택해 관련 뉴스를 확인하세요.</div>
+          </div>
+        </div>
+        <div className="sector-tabs">
+          {NEWS_SECTORS.map(sector => (
+            <button
+              key={sector}
+              className={`sector-tab ${selectedSector === sector ? 'active' : ''}`}
+              onClick={() => setSelectedSector(sector)}
+            >
+              {sector}
+            </button>
+          ))}
+        </div>
+        <div className="news-cards-list" style={{ marginTop: 16 }}>
+          {sectorArticles.length > 0 ? (
+            sectorArticles.map((article, i) => (
+              <NewsCard key={i} article={article} onClick={() => onCardClick(article)} />
+            ))
+          ) : (
+            <div className="news-empty">
+              <div className="news-empty-title">해당 섹터 뉴스를 불러오는 중이에요</div>
+              <div className="news-empty-sub">잠시 후 새로고침해 주세요.</div>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}
 
 function Sparkline({ data }: { data: number[] }) {
   const width = 92
@@ -727,6 +894,8 @@ function App() {
   const [loadingVisible, setLoadingVisible] = useState(true)
   const [allKnowledgeCards, setAllKnowledgeCards] = useState<KnowledgeCard[]>([])
   const [knowledgeCards, setKnowledgeCards] = useState<KnowledgeCard[]>([])
+  const [newsData, setNewsData] = useState<NewsData | null>(null)
+  const [selectedNewsArticle, setSelectedNewsArticle] = useState<NewsArticle | null>(null)
 
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
@@ -782,6 +951,13 @@ function App() {
     return () => {
       ignore = true
     }
+  }, [])
+
+  useEffect(() => {
+    fetch('/data/news.json', { cache: 'no-store' })
+      .then(r => r.json() as Promise<NewsData>)
+      .then(setNewsData)
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -1073,7 +1249,9 @@ function App() {
       <main className="main">
         <header className="header">
           <div>
-            <div className="header-title">대시보드</div>
+            <div className="header-title">
+              {active === 'home' ? '대시보드' : active === 'whole' ? '전체 종목' : '뉴스 & 리포트'}
+            </div>
             <div className="header-date">{marketData.generatedAtLabel}</div>
           </div>
           <div className="search">
@@ -1203,7 +1381,10 @@ function App() {
             </div>
           </section>
 
-          {isWholeView && (
+          {active === 'news' && (
+            <NewsPage newsData={newsData} onCardClick={setSelectedNewsArticle} />
+          )}
+          {active !== 'news' && isWholeView && (
             <section className="whole-panel card" data-tour="whole-page">
               <div className="whole-panel-head">
                 <div>
@@ -1248,7 +1429,7 @@ function App() {
             </section>
           )}
 
-          {!isWholeView && (
+          {active !== 'news' && !isWholeView && (
             <>
           <section className="card chart-card" data-tour="chart">
             <div className="card-head">
@@ -1345,10 +1526,13 @@ function App() {
                 <div className="card-title">시장 핵심 뉴스</div>
                 {beginner && <div className="card-sub">시장에 영향을 주는 뉴스만 요약했어요.</div>}
               </div>
+              <button className="btn-ghost" style={{ fontSize: 12, padding: '6px 12px' }} onClick={() => setActive('news')}>
+                주요뉴스 보러가기 →
+              </button>
             </div>
             <div className="news-list">
               {news.map((item) => (
-                <div key={item.title} className="news-item">
+                <div key={item.title} className="news-item" onClick={() => setActive('news')} style={{ cursor: 'pointer' }}>
                   <div className="news-thumb">📰</div>
                   <div className="news-content">
                     <span className="news-tag tag-market">{item.tag}</span>
@@ -1593,6 +1777,9 @@ function App() {
         </div>
       </main>
 
+      {selectedNewsArticle && (
+        <NewsDetailModal article={selectedNewsArticle} onClose={() => setSelectedNewsArticle(null)} />
+      )}
       <SectionHelpTooltip help={hoverHelp} />
       <TourOverlay active={tourActive} step={safeTourStep} steps={visibleTourSteps} onNext={nextTourStep} onSkip={skipTour} />
       <SurveyModal

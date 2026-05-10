@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "sync:market": "node scripts/update-market-data.mjs",
-    "predev": "npm run sync:market || echo \"market sync failed; using cached data\"",
-    "prebuild": "npm run sync:market || echo \"market sync failed; using cached data\"",
-    "prepreview": "npm run sync:market || echo \"market sync failed; using cached data\"",
+    "sync:news": "node scripts/fetch-news.mjs",
+    "predev": "npm run sync:market && npm run sync:news || echo \"sync failed; using cached data\"",
+    "prebuild": "npm run sync:market && npm run sync:news || echo \"sync failed; using cached data\"",
+    "prepreview": "npm run sync:market && npm run sync:news || echo \"sync failed; using cached data\"",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

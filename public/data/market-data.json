@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-10T03:33:16.309Z",
-  "generatedAtLabel": "2026년 5월 10일 일요일 PM 12:33",
+  "generatedAt": "2026-05-10T05:01:25.886Z",
+  "generatedAtLabel": "2026년 5월 10일 일요일 PM 02:01",
   "marketStatus": {
     "signal": "up",
     "label": "상승",
@@ -89,9 +89,9 @@
     {
       "label": "Bitcoin",
       "symbol": "BTC-USD",
-      "value": "80,724.13",
-      "change": "+343.84",
-      "pct": "+0.43%",
+      "value": "80,711",
+      "change": "+337",
+      "pct": "+0.42%",
       "up": true,
       "series": [
         10,
