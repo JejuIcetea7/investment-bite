@@ -7,6 +7,7 @@ import { normalizeSearchText, createPropensityResult } from './utils'
 import SectionHelpTooltip from './components/SectionHelpTooltip'
 import TourOverlay from './components/TourOverlay'
 import SurveyModal from './components/SurveyModal'
+import IndicatorsSection from './pages/Dashboard/IndicatorsSection'
 import DashboardPage from './pages/Dashboard'
 import WholePage from './pages/WholePage'
 import NewsPage from './pages/NewsPage'
@@ -155,12 +156,12 @@ function App() {
       )}
 
       <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">투</div>
-          <div>
-            <div className="brand-name">투자 한입</div>
-            <div className="brand-sub">Investing, bite-sized</div>
-          </div>
+        <div className="sidebar-logo-center">
+          <img
+            src="/charcter/대표_문구.png"
+            alt="투자 한입 로고"
+            className="sidebar-logo-img"
+          />
         </div>
         <div className="greet">
           <div className="greet-hi">안녕하세요</div>
@@ -169,22 +170,30 @@ function App() {
         </div>
         <nav className="nav">
           <div className="nav-label">Menu</div>
-          {([['home', '대시보드'], ['whole', '전체 종목'], ['news', '뉴스 & 리포트']] as const).map(([key, label]) => (
-            <button key={key} className={`nav-item ${active === key ? 'active' : ''}`} onClick={() => setActive(key)}>
+          {([
+            ['home', '대시보드', 'menu-dashboard'],
+            ['whole', '전체 종목', 'menu-whole'],
+            ['news', '뉴스 & 리포트', 'menu-news'],
+          ] as const).map(([key, label, tourKey]) => (
+            <button key={key} className={`nav-item ${active === key ? 'active' : ''}`} onClick={() => setActive(key)} data-tour={tourKey}>
               <span className="nav-icon">•</span><span>{label}</span>
             </button>
           ))}
         </nav>
         <nav className="nav">
           <div className="nav-label">Tools</div>
-          <button className={`nav-item ${dashboardEditMode ? 'active' : ''}`} onClick={() => setDashboardEditMode((v) => !v)}>
-            <span className="nav-icon">🧩</span><span>{dashboardEditMode ? '편집 종료' : '대시보드 편집'}</span>
-          </button>
-          <button className="nav-item" onClick={openPropensity}>
-            <span className="nav-icon">✨</span><span>투자성향 분석</span>
-          </button>
-          <button className="nav-item" onClick={() => { setTourStep(0); setTourActive(true) }} data-tour="tour-btn">
-            <span className="nav-icon">🧭</span><span>가이드 투어</span>
+          {active === 'home' && (
+            <>
+              <button className={`nav-item ${dashboardEditMode ? 'active' : ''}`} onClick={() => setDashboardEditMode((v) => !v)} data-tour="tool-dashboard-edit">
+                <span className="nav-icon">🧩</span><span>{dashboardEditMode ? '편집 종료' : '대시보드 편집'}</span>
+              </button>
+              <button className="nav-item" onClick={openPropensity} data-tour="tool-propensity">
+                <span className="nav-icon">✨</span><span>투자성향 분석</span>
+              </button>
+            </>
+          )}
+          <button className="nav-item" onClick={() => { setActive('home'); setTourStep(0); setTourActive(true) }} data-tour="tour-btn">
+            <span className="nav-icon">🍙</span><span>가이드 투어</span>
           </button>
         </nav>
         <div className="sidebar-bottom">
@@ -250,6 +259,12 @@ function App() {
         </header>
 
         <div className="content">
+          <IndicatorsSection
+            indicators={marketData.indicators}
+            beginner={beginner}
+            setHoverHelp={setHoverHelp}
+          />
+
           {active === 'news' && (
             <NewsPage newsData={newsData} onCardClick={setSelectedNewsArticle} />
           )}

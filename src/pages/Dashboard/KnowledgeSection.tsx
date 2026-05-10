@@ -21,7 +21,7 @@ export default function KnowledgeSection({
       <section className="card" data-tour="know">
         <div className="card-head">
           <div className="card-head-left">
-            <div className="card-num"><span className="card-num-dot">6</span> 투자 상식 카드</div>
+            <div className="card-num"><span className="card-num-dot">5</span> 투자 상식 카드</div>
             <div className="card-title">오늘의 한 입 지식</div>
             {beginner && <div className="card-sub">매일 바뀌는 짧은 투자 상식이에요.</div>}
           </div>

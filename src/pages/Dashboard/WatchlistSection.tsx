@@ -24,7 +24,7 @@ export default function WatchlistSection({
       <section className="card" data-tour="watch">
         <div className="card-head">
           <div className="card-head-left">
-            <div className="card-num"><span className="card-num-dot">4</span> 관심 종목</div>
+            <div className="card-num"><span className="card-num-dot">3</span>관심 종목</div>
             <div className="card-title">My Watchlist</div>
             {beginner && <div className="card-sub">내가 보는 종목의 가격과 변화율을 모아봤어요.</div>}
           </div>

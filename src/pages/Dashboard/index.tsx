@@ -1,6 +1,5 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react'
 import type { MarketData, WatchItem, PropensityResult, KnowledgeCard, DailyQuiz, DashboardWidgetKey, HoverHelp } from '../../types'
-import IndicatorsSection from './IndicatorsSection'
 import ChartSection from './ChartSection'
 import NewsSummarySection from './NewsSummarySection'
 import WatchlistSection from './WatchlistSection'
@@ -76,11 +75,6 @@ export default function DashboardPage({
 
   return (
     <>
-      <IndicatorsSection
-        indicators={marketData.indicators}
-        beginner={beginner}
-        setHoverHelp={setHoverHelp}
-      />
       <ChartSection
         displayChart={displayChart}
         marketStatus={marketData.marketStatus}

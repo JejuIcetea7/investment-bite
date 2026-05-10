@@ -1,7 +1,7 @@
 import type { DashboardWidgetKey, PropensityQuestion, TourStep } from '../types'
 
 export const IND_PER_PAGE = 6
-export const IND_INTERVAL_MS = 10000
+export const IND_INTERVAL_MS = 20000
 
 export const DASHBOARD_WIDGETS: DashboardWidgetKey[] = ['watch', 'propensity', 'know', 'quiz']
 
@@ -118,6 +118,42 @@ export const PROPENSITY_QUESTIONS: PropensityQuestion[] = [
 ]
 
 export const TOUR_STEPS: TourStep[] = [
+  {
+    sel: '[data-tour="menu-dashboard"]',
+    title: '대시보드',
+    text: '시장 요약, 차트, 관심 종목처럼 오늘 확인할 정보를 한 화면에서 볼 수 있어요.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="menu-whole"]',
+    title: '전체 종목',
+    text: '등록된 종목을 넓게 둘러보고 원하는 종목을 빠르게 찾아볼 수 있는 메뉴예요.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="menu-news"]',
+    title: '뉴스 & 리포트',
+    text: '시장 뉴스와 리포트를 모아 확인하고 투자 판단에 필요한 흐름을 살펴볼 수 있어요.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="tool-dashboard-edit"]',
+    title: '대시보드 편집',
+    text: '대시보드 카드 구성을 내 관심사에 맞게 켜고 끌 수 있어요.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="tool-propensity"]',
+    title: '투자 성향 분석',
+    text: '짧은 설문으로 나에게 맞는 투자 성향과 참고 포인트를 확인할 수 있어요.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="tour-btn"]',
+    title: '가이드 투어',
+    text: '이 버튼으로 언제든 주요 화면과 기능 설명을 다시 볼 수 있어요.',
+    pos: 'right',
+  },
   {
     sel: '[data-tour="market-summary"]',
     title: '시장 요약',

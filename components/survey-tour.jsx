@@ -87,6 +87,12 @@ const SurveyModal = ({ open, onClose, onComplete }) => {
 
 /* Tour */
 const TOUR_STEPS = [
+  { sel: '[data-tour="menu-dashboard"]', title: '대시보드', text: '시장 요약, 차트, 관심 종목처럼 오늘 확인할 정보를 한 화면에서 볼 수 있어요.', pos: 'right' },
+  { sel: '[data-tour="menu-whole"]', title: '전체 종목', text: '등록된 종목을 넓게 둘러보고 원하는 종목을 빠르게 찾아볼 수 있는 메뉴예요.', pos: 'right' },
+  { sel: '[data-tour="menu-news"]', title: '뉴스 & 리포트', text: '시장 뉴스와 리포트를 모아 확인하고 투자 판단에 필요한 흐름을 살펴볼 수 있어요.', pos: 'right' },
+  { sel: '[data-tour="tool-dashboard-edit"]', title: '대시보드 편집', text: '대시보드 카드 구성을 내 관심사에 맞게 켜고 끌 수 있어요.', pos: 'right' },
+  { sel: '[data-tour="tool-propensity"]', title: '투자 성향 분석', text: '짧은 설문으로 나에게 맞는 투자 성향과 참고 포인트를 확인할 수 있어요.', pos: 'right' },
+  { sel: '[data-tour="tour-btn"]', title: '가이드 투어', text: '이 버튼으로 언제든 주요 화면과 기능 설명을 다시 볼 수 있어요.', pos: 'right' },
   { sel: '[data-tour="market-summary"]', title: '시장 요약', text: '6개의 핵심 지표를 한눈에 보세요. 카드 위에 마우스를 올리면 "무엇인지 + 왜 중요한지" 설명이 떠요.', pos: 'bottom' },
   { sel: '[data-tour="chart"]', title: '내 종목 차트', text: '관심 종목의 흐름을 차트로 분석하고, "Why?" 버튼으로 등락의 이유를 확인할 수 있어요.', pos: 'right' },
   { sel: '[data-tour="news"]', title: '시장 핵심 뉴스', text: '오늘의 시장에 영향을 주는 뉴스만 큐레이션해 드려요.', pos: 'left' },
@@ -95,6 +101,16 @@ const TOUR_STEPS = [
   { sel: '[data-tour="quiz"]', title: '데일리 퀴즈', text: '매일 짧은 퀴즈로 경제 상식을 키워보세요.', pos: 'top' },
   { sel: '[data-tour="beginner-toggle"]', title: '초보자 모드', text: '언제든지 토글해 화면의 설명 텍스트를 켜고 끌 수 있어요.', pos: 'right' },
 ];
+
+const TOUR_CHAR_MAP = {
+  '[data-tour="market-summary"]': '/charcter/궁금한_아이콘.png',
+  '[data-tour="chart"]': '/charcter/느낌표_아이콘.png',
+  '[data-tour="watch"]': '/charcter/하트_아이콘.png',
+  '[data-tour="propensity"]': '/charcter/투자성향_분석_아이콘png.png',
+  '[data-tour="know"]': '/charcter/공부하는_아이콘.png',
+  '[data-tour="quiz"]': '/charcter/투자_상식_카드_아이콘.png',
+  '[data-tour="news"]': '/charcter/뉴스_아이콘.png',
+};
 
 const Tour = ({ active, step, onNext, onSkip }) => {
   const [box, setBox] = React.useState(null);
@@ -124,17 +140,20 @@ const Tour = ({ active, step, onNext, onSkip }) => {
   const vw = window.innerWidth, vh = window.innerHeight;
   let cx, cy;
   const cardW = 320, cardH = 180;
+  const charSrc = TOUR_CHAR_MAP[box.sel];
+  const charOverlap = charSrc ? 70 : 0;
   if (box.pos === 'bottom') { cx = box.x + box.w/2 - cardW/2; cy = box.y + box.h + 12; }
   else if (box.pos === 'top') { cx = box.x + box.w/2 - cardW/2; cy = box.y - cardH - 12; }
   else if (box.pos === 'left') { cx = box.x - cardW - 12; cy = box.y + box.h/2 - cardH/2; }
   else { cx = box.x + box.w + 12; cy = box.y + box.h/2 - cardH/2; }
-  cx = Math.max(16, Math.min(cx, vw - cardW - 16));
+  cx = Math.max(16, Math.min(cx, vw - cardW - charOverlap - 16));
   cy = Math.max(16, Math.min(cy, vh - cardH - 16));
 
   return (
     <div className={`tour-overlay ${active ? 'show' : ''}`}>
       <div className="tour-spot" style={{left: box.x, top: box.y, width: box.w, height: box.h}}></div>
       <div className="tour-card" style={{left: cx, top: cy}}>
+        {charSrc && <img src={charSrc} className="tour-char-outside" alt="가이드 캐릭터" />}
         <span className="tour-step-label">STEP {step + 1} / {TOUR_STEPS.length}</span>
         <div className="tour-title">{box.title}</div>
         <div className="tour-text">{box.text}</div>

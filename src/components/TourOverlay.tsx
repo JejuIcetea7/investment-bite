@@ -18,6 +18,9 @@ export default function TourOverlay({
   const [box, setBox] = useState<null | (TourStep & { x: number; y: number; w: number; h: number })>(null)
 
   const CHAR_MAP: Record<string, string> = {
+    '[data-tour="market-summary"]': '/charcter/궁금한_아이콘.png',
+    '[data-tour="chart"]': '/charcter/느낌표_아이콘.png',
+    '[data-tour="watch"]': '/charcter/하트_아이콘.png',
     '[data-tour="propensity"]': '/charcter/투자성향_분석_아이콘png.png',
     '[data-tour="know"]': '/charcter/공부하는_아이콘.png',
     '[data-tour="quiz"]': '/charcter/투자_상식_카드_아이콘.png',
@@ -53,6 +56,8 @@ export default function TourOverlay({
 
   const cardWidth = 320
   const cardHeight = 180
+  const charSrc = CHAR_MAP[box.sel]
+  const charOverlap = charSrc ? 70 : 0
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
 
@@ -70,21 +75,16 @@ export default function TourOverlay({
     top = box.y + box.h / 2 - cardHeight / 2
   }
 
-  left = Math.max(16, Math.min(left, viewportWidth - cardWidth - 16))
+  left = Math.max(16, Math.min(left, viewportWidth - cardWidth - charOverlap - 16))
   top = Math.max(16, Math.min(top, viewportHeight - cardHeight - 16))
-
-  const charSrc = CHAR_MAP[box.sel]
-  const CHAR_SIZE = 140
-  const charLeft = Math.max(12, left - CHAR_SIZE - 12)
-  const charTop = top + 8
 
   return (
     <div className="tour-overlay show">
       <div className="tour-spot" style={{ left: box.x, top: box.y, width: box.w, height: box.h }} />
-      {charSrc && (
-        <img src={charSrc} className="tour-char-outside" style={{ left: charLeft, top: charTop, width: CHAR_SIZE, height: CHAR_SIZE }} alt="가이드 캐릭터" />
-      )}
       <div className="tour-card" style={{ left, top }}>
+        {charSrc && (
+          <img src={charSrc} className="tour-char-outside" alt="가이드 캐릭터" />
+        )}
         <span className="tour-step-label">STEP {step + 1} / {TOUR_STEPS.length}</span>
         <div className="tour-title">{box.title}</div>
         <div className="tour-text">{box.text}</div>
