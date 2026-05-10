@@ -7,11 +7,44 @@ import { normalizeSearchText, createPropensityResult } from './utils'
 import SectionHelpTooltip from './components/SectionHelpTooltip'
 import TourOverlay from './components/TourOverlay'
 import SurveyModal from './components/SurveyModal'
+import PrologueModal from './components/PrologueModal'
 import IndicatorsSection from './pages/Dashboard/IndicatorsSection'
 import DashboardPage from './pages/Dashboard'
 import WholePage from './pages/WholePage'
 import NewsPage from './pages/NewsPage'
 import NewsDetailModal from './pages/NewsPage/NewsDetailModal'
+
+type UserProfile = {
+  nickname: string
+}
+
+const USER_PROFILE_KEY = 'investment-bite-user-profile'
+const PROPENSITY_RESULT_KEY = 'investment-bite-propensity-result'
+
+type SavedPropensityResult = {
+  answers: number[]
+  result: PropensityResult
+  completedAt: string
+}
+
+const getAvatarInitial = (nickname: string) => {
+  const normalized = nickname.trim()
+  return normalized ? Array.from(normalized)[0] : '?'
+}
+
+const readSavedPropensityResult = (): PropensityResult | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(PROPENSITY_RESULT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<SavedPropensityResult>
+    return parsed.result && typeof parsed.result.title === 'string' && typeof parsed.result.score === 'number'
+      ? parsed.result
+      : null
+  } catch {
+    return null
+  }
+}
 
 function App() {
   const [beginner, setBeginner] = useState(true)
@@ -27,7 +60,7 @@ function App() {
   const [propensityOpen, setPropensityOpen] = useState(false)
   const [propensityStep, setPropensityStep] = useState(0)
   const [propensityAnswers, setPropensityAnswers] = useState<number[]>([])
-  const [propensityResult, setPropensityResult] = useState<PropensityResult | null>(null)
+  const [propensityResult, setPropensityResult] = useState<PropensityResult | null>(() => readSavedPropensityResult())
   const [hoverHelp, setHoverHelp] = useState<{ title: string; text: string; x: number; y: number } | null>(null)
   const [selectedWatchItem, setSelectedWatchItem] = useState<WatchItem | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -50,6 +83,20 @@ function App() {
   const [knowledgeCards, setKnowledgeCards] = useState<KnowledgeCard[]>([])
   const [newsData, setNewsData] = useState<NewsData | null>(null)
   const [selectedNewsArticle, setSelectedNewsArticle] = useState<NewsArticle | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = window.localStorage.getItem(USER_PROFILE_KEY)
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as Partial<UserProfile>
+      return typeof parsed.nickname === 'string' && parsed.nickname.trim()
+        ? { nickname: parsed.nickname.trim() }
+        : null
+    } catch {
+      return null
+    }
+  })
+  const [pendingFirstTour, setPendingFirstTour] = useState(false)
 
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
@@ -93,6 +140,14 @@ function App() {
     catch { /* ignore */ }
   }, [hiddenWidgets])
 
+  useEffect(() => {
+    if (!pendingFirstTour || loadingVisible || !userProfile) return
+    setActive('home')
+    setTourStep(0)
+    window.setTimeout(() => setTourActive(true), 120)
+    setPendingFirstTour(false)
+  }, [loadingVisible, pendingFirstTour, userProfile])
+
   const normalizedSearchQuery = normalizeSearchText(searchQuery)
   const searchMatches = useMemo(() => {
     if (normalizedSearchQuery.length < 2) return []
@@ -120,7 +175,15 @@ function App() {
     if (propensityStep < propensityAnswers.length - 1) { setPropensityStep((s) => s + 1); return }
     const isLast = propensityStep === 3
     if (!isLast) { setPropensityStep((s) => s + 1); return }
-    setPropensityResult(createPropensityResult(propensityAnswers))
+    const result = createPropensityResult(propensityAnswers)
+    setPropensityResult(result)
+    try {
+      window.localStorage.setItem(PROPENSITY_RESULT_KEY, JSON.stringify({
+        answers: propensityAnswers,
+        result,
+        completedAt: new Date().toISOString(),
+      }))
+    } catch { /* ignore */ }
     setPropensityOpen(false)
   }
 
@@ -142,6 +205,17 @@ function App() {
   }
 
   const isWholeView = active === 'whole'
+  const displayNickname = userProfile?.nickname ?? '민지'
+  const avatarInitial = getAvatarInitial(displayNickname)
+  const prologueOpen = !userProfile
+
+  const createUserProfile = (nickname: string) => {
+    const profile = { nickname }
+    setUserProfile(profile)
+    setPendingFirstTour(true)
+    try { window.localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile)) }
+    catch { /* ignore */ }
+  }
 
   return (
     <div className={`app ${beginner ? 'beginner' : 'pro'}`}>
@@ -165,7 +239,7 @@ function App() {
         </div>
         <div className="greet">
           <div className="greet-hi">안녕하세요</div>
-          <div className="greet-name">민지님 👋</div>
+          <div className="greet-name">{displayNickname}님 👋</div>
           <div className="greet-meta"><span className="greet-dot" />오늘도 좋은 하루 되세요</div>
         </div>
         <nav className="nav">
@@ -253,8 +327,8 @@ function App() {
           <button className="header-btn" title="알림">🔔<span className="badge" /></button>
           <button className="header-btn" title="설정">⚙</button>
           <div className="user-chip">
-            <div className="user-avatar">민</div>
-            <span className="user-name">민지</span>
+            <div className="user-avatar">{avatarInitial}</div>
+            <span className="user-name">{displayNickname}</span>
           </div>
         </header>
 
@@ -307,8 +381,9 @@ function App() {
         <NewsDetailModal article={selectedNewsArticle} onClose={() => setSelectedNewsArticle(null)} />
       )}
       <SectionHelpTooltip help={hoverHelp} />
+      {prologueOpen && <PrologueModal onCreateProfile={createUserProfile} />}
       <TourOverlay
-        active={tourActive}
+        active={tourActive && !prologueOpen}
         step={safeTourStep}
         steps={visibleTourSteps}
         onNext={() => {
