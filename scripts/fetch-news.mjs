@@ -177,6 +177,12 @@ async function main() {
     await new Promise(r => setTimeout(r, 300))
   }
 
+  const hasAnyData = topNews.length > 0 || Object.values(sectorNews).some(articles => articles.length > 0)
+  if (!hasAnyData) {
+    console.warn('수집된 뉴스가 없습니다. 기존 파일을 유지합니다.')
+    return
+  }
+
   const payload = {
     generatedAt: new Date().toISOString(),
     topNews,
