@@ -120,6 +120,20 @@ const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
   quiz: '투자 기초 퀴즈',
 }
 
+const STOCK_ALIASES: Record<string, string[]> = {
+  '005930.KS': ['삼성전자', '삼전', 'samsung', 'samsung electronics', '005930'],
+  NVDA: ['nvidia', '엔비디아', '엔비', 'nvda'],
+  AAPL: ['apple', 'apple inc', '애플', 'aapl'],
+  '035720.KS': ['카카오', 'kakao', '035720'],
+  '000660.KS': ['sk하이닉스', 'sk hynix', '하이닉스', 'hynix', '000660'],
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[\s._-]/g, '')
+}
+
 const defaultMarketData: MarketData = {
   generatedAt: '2026-05-05T05:32:00.000Z',
   generatedAtLabel: '2026년 5월 5일 화요일 · 장 마감 14:32',
@@ -688,6 +702,8 @@ function App() {
   const [selectedWatchItem, setSelectedWatchItem] = useState<WatchItem | null>(null)
   const [chartSeries, setChartSeries] = useState<number[] | null>(null)
   const [chartLoading, setChartLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
   const [indPage, setIndPage] = useState(0)
   const [indPlaying, setIndPlaying] = useState(true)
   const [indResetKey, setIndResetKey] = useState(0)
@@ -825,6 +841,22 @@ function App() {
   const isDailyQuizAnswered = selectedDailyAnswer !== null
   const dailyQuizSolvedCount = Math.min(dailyQuizIndex + (isDailyQuizAnswered ? 1 : 0), dailyQuizzes.length)
   const dailyQuizProgress = dailyQuizzes.length > 0 ? (dailyQuizSolvedCount / dailyQuizzes.length) * 100 : 0
+  const normalizedSearchQuery = normalizeSearchText(searchQuery)
+  const searchMatches = useMemo(() => {
+    if (normalizedSearchQuery.length < 2) return []
+
+    return marketData.watchlist.filter((stock) => {
+      const aliases = STOCK_ALIASES[stock.symbol] ?? []
+      const searchableText = [
+        stock.name,
+        stock.symbol,
+        ...aliases,
+      ].map(normalizeSearchText).join(' ')
+
+      return searchableText.includes(normalizedSearchQuery)
+    })
+  }, [marketData.watchlist, normalizedSearchQuery])
+  const showSearchSuggestions = searchFocused && normalizedSearchQuery.length >= 2
   const indTotalPages = Math.max(1, Math.ceil(marketData.indicators.length / IND_PER_PAGE))
   const safeIndPage = Math.min(indPage, indTotalPages - 1)
   const visibleTourSteps = useMemo(
@@ -1046,8 +1078,40 @@ function App() {
           </div>
           <div className="search">
             <span className="search-icon">⌕</span>
-            <input placeholder="종목명, 티커, 키워드 검색" />
-            <span className="search-kbd">⌘K</span>
+            <input
+              value={searchQuery}
+              placeholder="종목명, 티커, 키워드 검색"
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              aria-label="종목 검색"
+              aria-expanded={showSearchSuggestions}
+            />
+            {!searchQuery && <span className="search-kbd">⌘K</span>}
+            {showSearchSuggestions && (
+              <div className="search-suggestions">
+                {searchMatches.length > 0 ? (
+                  searchMatches.map((stock) => (
+                    <button
+                      key={stock.symbol}
+                      type="button"
+                      className="search-suggestion"
+                      onMouseDown={(event) => event.preventDefault()}
+                    >
+                      <span className="search-suggestion-main">
+                        <span className="search-suggestion-name">{stock.name}</span>
+                        <span className="search-suggestion-symbol">{stock.symbol}</span>
+                      </span>
+                      <span className={`search-suggestion-change ${stock.up ? 'up' : 'down'}`}>
+                        {stock.chg}
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="search-empty">검색 결과 없음</div>
+                )}
+              </div>
+            )}
           </div>
           <button className="header-btn" title="알림">🔔<span className="badge" /></button>
           <button className="header-btn" title="설정">⚙</button>
