@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { NewsArticle, NewsData, NewsSectorKey } from '../../types'
 import { NEWS_SECTORS } from '../../constants'
 import NewsCard from './NewsCard'
+import NewsLoadingSkeleton from './NewsLoadingSkeleton'
 
 export default function NewsPage({
   newsData,
@@ -12,6 +13,8 @@ export default function NewsPage({
 }) {
   const [selectedSector, setSelectedSector] = useState<NewsSectorKey>('AI')
   const sectorArticles = newsData?.sectorNews[selectedSector] ?? []
+
+  if (!newsData) return <div className="news-page"><NewsLoadingSkeleton /></div>
 
   return (
     <div className="news-page">
@@ -24,16 +27,9 @@ export default function NewsPage({
           </div>
         </div>
         <div className="news-cards-list">
-          {newsData?.topNews && newsData.topNews.length > 0 ? (
-            newsData.topNews.map((article, i) => (
-              <NewsCard key={i} article={article} onClick={() => onCardClick(article)} />
-            ))
-          ) : (
-            <div className="news-empty">
-              <div className="news-empty-title">뉴스를 불러오는 중이에요</div>
-              <div className="news-empty-sub">npm run sync:news 를 실행하거나 잠시 후 새로고침해 주세요.</div>
-            </div>
-          )}
+          {newsData.topNews.map((article, i) => (
+            <NewsCard key={i} article={article} onClick={() => onCardClick(article)} />
+          ))}
         </div>
       </section>
 
@@ -57,16 +53,9 @@ export default function NewsPage({
           ))}
         </div>
         <div className="news-cards-list" style={{ marginTop: 16 }}>
-          {sectorArticles.length > 0 ? (
-            sectorArticles.map((article, i) => (
-              <NewsCard key={i} article={article} onClick={() => onCardClick(article)} />
-            ))
-          ) : (
-            <div className="news-empty">
-              <div className="news-empty-title">해당 섹터 뉴스를 불러오는 중이에요</div>
-              <div className="news-empty-sub">잠시 후 새로고침해 주세요.</div>
-            </div>
-          )}
+          {sectorArticles.map((article, i) => (
+            <NewsCard key={i} article={article} onClick={() => onCardClick(article)} />
+          ))}
         </div>
       </section>
     </div>

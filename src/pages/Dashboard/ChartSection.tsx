@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { ChartData, MarketStatus, HoverHelp } from '../../types'
 import { STAT_HELP } from '../../constants'
 import ChartArea from '../../components/ChartArea'
+import { edgeFunctionUrl, edgeFunctionHeaders } from '../../lib/supabase'
 
 export default function ChartSection({
   displayChart,
@@ -25,7 +26,11 @@ export default function ChartSection({
   useEffect(() => {
     const controller = new AbortController()
     setChartLoading(true)
-    fetch(`/api/chart/${encodeURIComponent(displayChart.symbol)}/${encodeURIComponent(chartTab)}`, {
+    const url = new URL(edgeFunctionUrl('get-chart'))
+    url.searchParams.set('symbol', displayChart.symbol)
+    url.searchParams.set('period', chartTab)
+    fetch(url.toString(), {
+      headers: edgeFunctionHeaders(),
       signal: controller.signal,
     })
       .then((r) => r.json() as Promise<{ series?: number[] }>)
