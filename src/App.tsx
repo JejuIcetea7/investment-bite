@@ -126,10 +126,27 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const CACHE_KEY = 'news_cache'
+    const CACHE_TTL = 1000 * 60 * 30 // 30분
+
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached)
+        if (Date.now() - timestamp < CACHE_TTL) {
+          setNewsData(data)
+          return
+        }
+      } catch {}
+    }
+
     // Edge Function에서 실시간 뉴스 가져오기, 실패 시 캐시된 news.json fallback
     fetch(edgeFunctionUrl('get-news'), { headers: edgeFunctionHeaders() })
-      .then(r => { if (!r.ok) throw new Error(`${r.status}`) ; return r.json() as Promise<NewsData> })
-      .then(setNewsData)
+      .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json() as Promise<NewsData> })
+      .then(data => {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }))
+        setNewsData(data)
+      })
       .catch(() => {
         fetch('/data/news.json', { cache: 'no-store' })
           .then(r => r.json() as Promise<NewsData>)
