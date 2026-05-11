@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
+import { edgeFunctionUrl, edgeFunctionHeaders } from './lib/supabase'
 import type { MarketData, DailyQuiz, DailyQuizData, KnowledgeCard, NewsData, NewsArticle, WatchItem, PropensityResult, DashboardWidgetKey } from './types'
 import { DASHBOARD_WIDGETS, TOUR_STEPS, STOCK_ALIASES } from './constants'
 import defaultMarketData from './data/defaultMarketData'
@@ -101,10 +102,16 @@ function App() {
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
     let ignore = false
-    fetch('/data/market-data.json', { cache: 'no-store' })
+    fetch(edgeFunctionUrl('get-market'), { headers: edgeFunctionHeaders() })
       .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<MarketData> })
       .then((payload) => { if (!ignore) { setMarketData(payload); setDataSource('Yahoo Finance') } })
-      .catch(() => { if (!ignore) setDataSource('기본 데이터') })
+      .catch(() => {
+        // Edge Function 실패 시 정적 파일 fallback
+        fetch('/data/market-data.json', { cache: 'no-store' })
+          .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<MarketData> })
+          .then((payload) => { if (!ignore) { setMarketData(payload); setDataSource('Yahoo Finance') } })
+          .catch(() => { if (!ignore) setDataSource('기본 데이터') })
+      })
       .finally(() => { if (!ignore) setTimeout(() => setLoadingVisible(false), 350) })
     return () => { ignore = true }
   }, [])
@@ -119,10 +126,16 @@ function App() {
   }, [])
 
   useEffect(() => {
-    fetch('/data/news.json', { cache: 'no-store' })
-      .then(r => r.json() as Promise<NewsData>)
+    // Edge Function에서 실시간 뉴스 가져오기, 실패 시 캐시된 news.json fallback
+    fetch(edgeFunctionUrl('get-news'), { headers: edgeFunctionHeaders() })
+      .then(r => { if (!r.ok) throw new Error(`${r.status}`) ; return r.json() as Promise<NewsData> })
       .then(setNewsData)
-      .catch(() => {})
+      .catch(() => {
+        fetch('/data/news.json', { cache: 'no-store' })
+          .then(r => r.json() as Promise<NewsData>)
+          .then(setNewsData)
+          .catch(() => {})
+      })
   }, [])
 
   useEffect(() => {
