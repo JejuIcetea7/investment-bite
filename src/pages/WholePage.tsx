@@ -165,7 +165,7 @@ export default function WholePage({
       )}
 
       {sectorData && (
-        <div className="whole-sector-tabs" role="tablist" aria-label="섹터 필터">
+        <div className="whole-sector-tabs" role="tablist" aria-label="섹터 필터" data-tour="whole-sector-tabs">
           {sectorData.sectors.map((sector) => (
             <button
               key={sector.key}
@@ -222,7 +222,7 @@ export default function WholePage({
                       </div>
                       <div className="whole-stock-symbol">{stock.symbol}</div>
                       {stock.statusSummary && (
-                        <div className="whole-stock-summary">{stock.statusSummary}</div>
+                        <div className="whole-stock-summary" data-tour="whole-stock-summary">{stock.statusSummary}</div>
                       )}
                     </div>
                     <div className={`whole-stock-price ${stock.up ? 'up' : 'down'}`}>
@@ -240,6 +240,7 @@ export default function WholePage({
                         onClick={() => onToggleWatch(stock)}
                         aria-label={`${stock.name} ${watchlistSymbols.includes(stock.symbol) ? '관심 해제' : '관심 추가'}`}
                         title={watchlistSymbols.includes(stock.symbol) ? '관심 해제' : '관심 추가'}
+                        data-tour="whole-watch-toggle"
                       >
                         {watchlistSymbols.includes(stock.symbol) ? '♥' : '♡'}
                       </button>
@@ -251,6 +252,7 @@ export default function WholePage({
                           aria-expanded={openAlertSymbol === stock.symbol}
                           aria-label={`${stock.name} 가격 알림 설정`}
                           title="가격 알림"
+                          data-tour="whole-alert-button"
                         >
                           🔔
                         </button>

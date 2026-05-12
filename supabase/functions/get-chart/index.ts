@@ -7,6 +7,137 @@ const CORS = {
 
 type Period = '1D' | '1W' | '1M' | '전체'
 const VALID_PERIODS = new Set<string>(['1D', '1W', '1M', '전체'])
+const KRW_FMT = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 2 })
+const USD_FMT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
+
+type ChartStat = {
+  label: string
+  value: string
+}
+
+type ChartPayload = {
+  series: number[]
+  stats: ChartStat[]
+}
+
+type YahooMeta = {
+  currency?: string
+  regularMarketVolume?: number
+  marketCap?: number
+  trailingPE?: number
+  fiftyTwoWeekLow?: number
+  fiftyTwoWeekHigh?: number
+}
+
+type YahooPageStats = {
+  volume?: string
+  marketCap?: string
+  trailingPE?: string
+}
+
+function fin(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function fmtVol(value: number) {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`
+  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`
+  return Math.round(value).toLocaleString('ko-KR')
+}
+
+function fmtCap(value: number, currency = '') {
+  if (currency === 'KRW') {
+    if (value >= 1e12) return `${(value / 1e12).toFixed(1)}조`
+    if (value >= 1e8) return `${Math.round(value / 1e8).toLocaleString('ko-KR')}억`
+    return KRW_FMT.format(value)
+  }
+  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`
+  return `$${USD_FMT.format(value)}`
+}
+
+function fmtPrice(value: number, currency = '') {
+  if (currency === 'KRW') return KRW_FMT.format(value)
+  if (currency === 'USD') return `$${USD_FMT.format(value)}`
+  return USD_FMT.format(value)
+}
+
+function normalizePe(value?: string) {
+  if (!value || value === 'N/A') return undefined
+  return value.endsWith('x') ? value : `${value}x`
+}
+
+function normalizeKoreanMarketCap(raw?: string) {
+  if (!raw) return undefined
+  const eok = Number(raw.replace(/[^\d.]/g, ''))
+  if (!Number.isFinite(eok) || eok <= 0) return undefined
+  if (eok >= 10000) return `${(eok / 10000).toFixed(1)}조`
+  return `${Math.round(eok).toLocaleString('ko-KR')}억`
+}
+
+function readFinStreamerValue(html: string, field: string) {
+  const fieldIndex = html.indexOf(`data-field="${field}"`)
+  if (fieldIndex < 0) return undefined
+  const tagStart = html.lastIndexOf('<fin-streamer', fieldIndex)
+  const tagEnd = html.indexOf('>', fieldIndex)
+  if (tagStart < 0 || tagEnd < 0) return undefined
+  const tag = html.slice(tagStart, tagEnd)
+  const match = tag.match(/data-value="([^"]+)"/)
+  return match?.[1]?.trim()
+}
+
+async function fetchYahooPageStats(symbol: string): Promise<YahooPageStats> {
+  const url = `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}`
+  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+  if (!res.ok) return {}
+  const html = await res.text()
+  return {
+    volume: readFinStreamerValue(html, 'regularMarketVolume'),
+    marketCap: readFinStreamerValue(html, 'marketCap'),
+    trailingPE: readFinStreamerValue(html, 'trailingPE'),
+  }
+}
+
+async function fetchNaverPageStats(symbol: string): Promise<YahooPageStats> {
+  const match = symbol.match(/^(\d{6})\.(KS|KQ)$/)
+  if (!match) return {}
+  const url = `https://finance.naver.com/item/main.naver?code=${match[1]}`
+  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+  if (!res.ok) return {}
+  const html = await res.text()
+  const marketCapRaw = html.match(/시가총액\(억\)<\/span><\/th>\s*<td[^>]*>\s*([^<]+)\s*<\/td>/)?.[1]
+  const peRaw = html.match(/PER\(배\)<\/strong><\/th>\s*<td[^>]*>\s*([^<]+)\s*<\/td>/)?.[1]
+  const volumeRaw = html.match(/<dd>거래량\s*([\d,]+)<\/dd>/)?.[1]
+  return {
+    volume: volumeRaw?.trim(),
+    marketCap: normalizeKoreanMarketCap(marketCapRaw),
+    trailingPE: peRaw?.trim(),
+  }
+}
+
+async function fetchPageStats(symbol: string): Promise<YahooPageStats> {
+  const naverStats = await fetchNaverPageStats(symbol)
+  if (naverStats.marketCap || naverStats.trailingPE || naverStats.volume) return naverStats
+  return fetchYahooPageStats(symbol)
+}
+
+function makeStats(meta: YahooMeta, pageStats: YahooPageStats): ChartStat[] {
+  const currency = meta.currency ?? ''
+  const volume = meta.regularMarketVolume
+  const marketCap = meta.marketCap
+  const pe = meta.trailingPE
+  const low52 = meta.fiftyTwoWeekLow
+  const high52 = meta.fiftyTwoWeekHigh
+
+  return [
+    { label: '거래량', value: fin(volume) ? fmtVol(volume) : pageStats.volume ?? 'N/A' },
+    { label: '시가총액', value: fin(marketCap) ? fmtCap(marketCap, currency) : pageStats.marketCap ?? 'N/A' },
+    { label: 'PER', value: fin(pe) ? `${pe.toFixed(1)}x` : normalizePe(pageStats.trailingPE) ?? 'N/A' },
+    { label: '52주 변동', value: fin(low52) && fin(high52) ? `${fmtPrice(low52, currency)}–${fmtPrice(high52, currency)}` : 'N/A' },
+  ]
+}
 
 function periodConfig(period: Period, now: Date): { interval: string; period1: Date } {
   switch (period) {
@@ -17,7 +148,7 @@ function periodConfig(period: Period, now: Date): { interval: string; period1: D
   }
 }
 
-async function fetchYahooChart(symbol: string, period: Period): Promise<number[]> {
+async function fetchYahooChart(symbol: string, period: Period): Promise<ChartPayload> {
   const now = new Date()
   const { interval, period1 } = periodConfig(period, now)
 
@@ -36,8 +167,14 @@ async function fetchYahooChart(symbol: string, period: Period): Promise<number[]
   if (!res.ok) throw new Error(`Yahoo Finance ${res.status}`)
 
   const data = await res.json()
-  const closes: (number | null)[] = data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close ?? []
-  return closes.filter((v): v is number => v !== null && Number.isFinite(v))
+  const result = data?.chart?.result?.[0]
+  const meta: YahooMeta = result?.meta ?? {}
+  const closes: (number | null)[] = result?.indicators?.quote?.[0]?.close ?? []
+  const pageStats = await fetchPageStats(symbol).catch(() => ({}))
+  return {
+    series: closes.filter((v): v is number => v !== null && Number.isFinite(v)),
+    stats: makeStats(meta, pageStats),
+  }
 }
 
 serve(async (req) => {
@@ -59,8 +196,8 @@ serve(async (req) => {
       })
     }
 
-    const series = await fetchYahooChart(symbol, period as Period)
-    return new Response(JSON.stringify({ series }), {
+    const payload = await fetchYahooChart(symbol, period as Period)
+    return new Response(JSON.stringify(payload), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   } catch (err) {

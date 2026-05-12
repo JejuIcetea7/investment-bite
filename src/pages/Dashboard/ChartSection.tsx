@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import type { ChartData, MarketStatus, HoverHelp } from '../../types'
+import type { ChartData, MarketStatus, HoverHelp, MarketStat } from '../../types'
 import { STAT_HELP } from '../../constants'
 import ChartArea from '../../components/ChartArea'
 import { edgeFunctionUrl, edgeFunctionHeaders, hasSupabaseConfig } from '../../lib/supabase'
@@ -9,22 +9,22 @@ export default function ChartSection({
   displayChart,
   marketStatus,
   usdKrwRate,
-  dataSource,
   beginner,
   setHoverHelp,
 }: {
   displayChart: ChartData
   marketStatus: MarketStatus
   usdKrwRate: number | null
-  dataSource: string
   beginner: boolean
   setHoverHelp: Dispatch<SetStateAction<HoverHelp | null>>
 }) {
   const [chartTab, setChartTab] = useState<'1D' | '1W' | '1M' | '전체'>('1D')
+  const [analysisOpen, setAnalysisOpen] = useState(false)
   const [whyOpen, setWhyOpen] = useState(false)
   const [whyData, setWhyData] = useState<{ tag: string; title: string; summary: string; bullets: string[] } | null>(null)
   const [whyLoading, setWhyLoading] = useState(false)
   const [chartSeries, setChartSeries] = useState<number[] | null>(null)
+  const [chartStats, setChartStats] = useState<MarketStat[] | null>(null)
   const [chartLoading, setChartLoading] = useState(false)
   const [showKrw, setShowKrw] = useState(false)
   const whyCacheSymbol = useRef<string | null>(null)
@@ -55,6 +55,15 @@ export default function ChartSection({
     }
   }
 
+  const handleAnalysisClick = () => {
+    setAnalysisOpen((value) => !value)
+  }
+
+  useEffect(() => {
+    setAnalysisOpen(false)
+    setWhyOpen(false)
+  }, [displayChart.symbol])
+
   useEffect(() => {
     const controller = new AbortController()
     if (!hasSupabaseConfig) {
@@ -64,6 +73,7 @@ export default function ChartSection({
     }
 
     setChartLoading(true)
+    setChartStats(null)
     const url = new URL(edgeFunctionUrl('get-chart'))
     url.searchParams.set('symbol', displayChart.symbol)
     url.searchParams.set('period', chartTab)
@@ -71,14 +81,18 @@ export default function ChartSection({
       headers: edgeFunctionHeaders(),
       signal: controller.signal,
     })
-      .then((r) => r.json() as Promise<{ series?: number[] }>)
-      .then((data) => { if (data.series && data.series.length > 0) setChartSeries(data.series) })
+      .then((r) => r.json() as Promise<{ series?: number[]; stats?: MarketStat[] }>)
+      .then((data) => {
+        if (data.series && data.series.length > 0) setChartSeries(data.series)
+        if (data.stats && data.stats.length > 0) setChartStats(data.stats)
+      })
       .catch(() => {})
       .finally(() => setChartLoading(false))
     return () => controller.abort()
   }, [chartTab, displayChart.symbol])
 
   const displayedSeries = chartSeries ?? displayChart.series
+  const displayedStats = chartStats ?? displayChart.stats
   const isUpForPeriod = displayedSeries.length > 1 && displayedSeries[displayedSeries.length - 1] > displayedSeries[0]
   const canConvertToKrw = displayChart.currency === 'USD' && usdKrwRate !== null
 
@@ -108,6 +122,7 @@ export default function ChartSection({
   const convertedChange = showKrw && canConvertToKrw && changeNumber !== null ? changeNumber * usdKrwRate : null
   const displayPrice = convertedPrice !== null ? formatKrwValue(convertedPrice) : displayChart.price
   const displayChange = convertedChange !== null ? formatSignedKrwValue(convertedChange) : periodChange.change
+  const coreMetrics = useMemo(() => calculateCoreMetrics(displayedSeries), [displayedSeries])
 
   const getPeriodLabel = () => {
     switch (chartTab) {
@@ -124,7 +139,7 @@ export default function ChartSection({
     }
   }
 
-  const [hoveredData, setHoveredData] = useState<{ index: number; price: number; date: string; clientX: number; clientY: number } | null>(null)
+  const [hoveredData, setHoveredData] = useState<{ index: number; price: number; date: string; xRatio: number; yRatio: number } | null>(null)
 
   const generateDateLabel = (index: number) => {
     const now = new Date()
@@ -155,15 +170,15 @@ export default function ChartSection({
       : Math.round(price).toLocaleString('ko-KR')
   }
 
-  const handleChartHover = (index: number | null, clientX: number, clientY: number) => {
+  const handleChartHover = (index: number | null, xRatio: number, yRatio: number) => {
     if (index !== null) {
       const normalizedValue = displayedSeries[index]
       setHoveredData({
         index,
         price: normalizedValue,
         date: generateDateLabel(index),
-        clientX,
-        clientY,
+        xRatio,
+        yRatio,
       })
     } else {
       setHoveredData(null)
@@ -171,69 +186,72 @@ export default function ChartSection({
   }
 
   return (
-    <section className="card chart-card" data-tour="chart">
-      <div className="card-head">
-        <div className="card-head-left">
-          <div className="card-num"><span className="card-num-dot">1</span>내가 보고있는 종목</div>
-          <div className="card-title">{displayChart.name} 차트 분석</div>
-          {beginner && <div className="card-sub">{displayChart.note}</div>}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
-              <button className="why-btn" onClick={handleWhyClick}>
-                <span className="q">?</span> Why?
-              </button>
-              <div className={`why-pop ${whyOpen ? 'show' : ''}`}>
-                {whyLoading ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div className="why-skeleton-line" style={{ width: 64, height: 18, borderRadius: 99 }} />
-                    <div className="why-skeleton-line" style={{ width: '80%', height: 16 }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-                      <div className="why-skeleton-line" style={{ width: '100%', height: 13 }} />
-                      <div className="why-skeleton-line" style={{ width: '90%', height: 13 }} />
-                      <div className="why-skeleton-line" style={{ width: '70%', height: 13 }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-                      <div className="why-skeleton-line" style={{ width: '95%', height: 12 }} />
-                      <div className="why-skeleton-line" style={{ width: '85%', height: 12 }} />
-                      <div className="why-skeleton-line" style={{ width: '75%', height: 12 }} />
+    <section className={`card chart-card chart-flip-card ${analysisOpen ? 'flipped' : ''}`} data-tour="chart">
+      <div className="chart-flip-inner">
+        <div className="chart-face chart-face-front">
+          <div className="card-head">
+            <div className="card-head-left">
+              <div className="card-num"><span className="card-num-dot">1</span>내가 보고있는 종목</div>
+              {beginner && <div className="card-sub">{displayChart.note}</div>}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ position: 'relative' }}>
+                    <button className="why-btn" onClick={handleWhyClick}>
+                      <span className="q">?</span> Why?
+                    </button>
+                    <div className={`why-pop ${whyOpen ? 'show' : ''}`}>
+                      {whyLoading ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <div className="why-skeleton-line" style={{ width: 64, height: 18, borderRadius: 99 }} />
+                          <div className="why-skeleton-line" style={{ width: '80%', height: 16 }} />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                            <div className="why-skeleton-line" style={{ width: '100%', height: 13 }} />
+                            <div className="why-skeleton-line" style={{ width: '90%', height: 13 }} />
+                            <div className="why-skeleton-line" style={{ width: '70%', height: 13 }} />
+                          </div>
+                        </div>
+                      ) : whyData ? (
+                        <>
+                          <span className="why-pop-tag">{whyData.tag}</span>
+                          <div className="why-pop-title">{whyData.title}</div>
+                          <div className="why-pop-text">{whyData.summary}</div>
+                          {whyData.bullets.length > 0 && (
+                            <div className="why-pop-list">
+                              {whyData.bullets.map((b) => (
+                                <div key={b} className="why-pop-li">{b}</div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: 'var(--muted)' }}>데이터를 불러올 수 없습니다.</div>
+                      )}
                     </div>
                   </div>
-                ) : whyData ? (
-                  <>
-                    <span className="why-pop-tag">{whyData.tag}</span>
-                    <div className="why-pop-title">{whyData.title}</div>
-                    <div className="why-pop-text">{whyData.summary}</div>
-                    {whyData.bullets.length > 0 && (
-                      <div className="why-pop-list">
-                        {whyData.bullets.map((b) => (
-                          <div key={b} className="why-pop-li">{b}</div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: 'var(--muted)' }}>데이터를 불러올 수 없습니다.</div>
-                )}
+                  <div className="chart-tabs">
+                    {(['1D', '1W', '1M', '전체'] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        className={`chart-tab ${tab === chartTab ? 'active' : ''}`}
+                        onClick={() => {
+                          if (tab === chartTab) return
+                          setChartLoading(true)
+                          setChartTab(tab)
+                        }}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button className="chart-analysis-btn" type="button" onClick={handleAnalysisClick}>
+                  {displayChart.name} 차트분석
+                </button>
               </div>
             </div>
-            <div className="chart-tabs">
-              {(['1D', '1W', '1M', '전체'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  className={`chart-tab ${tab === chartTab ? 'active' : ''}`}
-                  onClick={() => { setChartLoading(true); setChartTab(tab) }}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
           </div>
-          <span className="quiz-tag">{marketStatus.label}</span>
-          <span className="card-action">{dataSource}</span>
-        </div>
-      </div>
       <div className="chart-stock-row">
         <div>
           <div className="chart-symbol">{displayChart.symbol} · {displayChart.currency === 'KRW' ? 'KOSPI' : 'NASDAQ'}</div>
@@ -260,15 +278,16 @@ export default function ChartSection({
           {hoveredData && (
             <div
               style={{
-                position: 'fixed',
-                top: `${hoveredData.clientY + 16}px`,
-                left: `${hoveredData.clientX + 16}px`,
+                position: 'absolute',
+                top: `${hoveredData.yRatio * 100}%`,
+                left: `${hoveredData.xRatio * 100}%`,
+                transform: 'translate(-50%, calc(-100% - 10px))',
                 backgroundColor: 'white',
                 border: '1px solid #ddd',
                 borderRadius: 4,
                 padding: '8px 12px',
                 fontSize: 12,
-                zIndex: 10,
+                zIndex: 6,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                 pointerEvents: 'none',
               }}
@@ -302,7 +321,7 @@ export default function ChartSection({
         )}
       </div>
       <div className="chart-stats">
-        {displayChart.stats.map((stat) => (
+        {displayedStats.map((stat) => (
           <div
             key={stat.label}
             className={`chart-stat ${beginner && STAT_HELP[stat.label] ? 'has-help' : ''}`}
@@ -323,6 +342,36 @@ export default function ChartSection({
         {marketStatus.reasonText}
         {marketStatus.riskReasons.length > 0 ? ` · ${marketStatus.riskReasons.join(' / ')}` : ''}
       </div>
+        </div>
+        <div className="chart-face chart-face-back">
+          <div className="analysis-back-head">
+            <div>
+              <div className="card-num"><span className="card-num-dot">M</span>핵심 지표</div>
+              <div className="analysis-back-title">{displayChart.name} 차트분석</div>
+            </div>
+            <button className="analysis-close-btn" type="button" onClick={() => setAnalysisOpen(false)}>돌아가기</button>
+          </div>
+          <div className="analysis-result">
+            <div className="analysis-headline">{coreMetrics.headline}</div>
+            <div className="analysis-summary">{coreMetrics.summary}</div>
+            <div className="analysis-metric-grid">
+              {coreMetrics.rows.map((row) => (
+                <div key={row.label} className="analysis-metric">
+                  <div className="analysis-metric-label">{row.label}</div>
+                  <div className={`analysis-metric-value ${row.tone ?? ''}`}>{row.value}</div>
+                  <div className="analysis-metric-note">{row.note}</div>
+                </div>
+              ))}
+            </div>
+            {coreMetrics.missing.length > 0 && (
+              <div className="analysis-limit">
+                계산 제한: {coreMetrics.missing.join(', ')}은 현재 차트 데이터 길이로 계산하지 않습니다.
+              </div>
+            )}
+            <div className="analysis-disclaimer">이 분석은 차트에 표시된 가격 시계열만 기준으로 계산한 참고 정보입니다.</div>
+          </div>
+        </div>
+      </div>
     </section>
   )
 }
@@ -341,4 +390,68 @@ function formatKrwValue(value: number) {
 function formatSignedKrwValue(value: number) {
   const prefix = value >= 0 ? '+' : '-'
   return `${prefix}${formatKrwValue(Math.abs(value))}`
+}
+
+function calculateCoreMetrics(series: number[]) {
+  const values = series.filter((value) => Number.isFinite(value) && value > 0)
+  const current = values.at(-1) ?? null
+  const previous = values.at(-2) ?? null
+  const missing: string[] = []
+  const percent = (now: number | null, before: number | null) => {
+    if (now === null || before === null || before === 0) return null
+    return ((now - before) / before) * 100
+  }
+  const average = (slice: number[]) => slice.reduce((sum, value) => sum + value, 0) / slice.length
+  const formatPct = (value: number | null) => value === null ? '계산 불가' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
+  const formatNumber = (value: number | null) => value === null ? '계산 불가' : value.toLocaleString('ko-KR', { maximumFractionDigits: 2 })
+  const tone = (value: number | null) => value === null ? 'muted' : value > 0 ? 'up' : value < 0 ? 'down' : 'muted'
+
+  const dailyReturn = percent(current, previous)
+  const weeklyReturn = values.length >= 8 ? percent(current, values.at(-8) ?? null) : null
+  const monthlyReturn = values.length >= 31 ? percent(current, values.at(-31) ?? null) : null
+  const cumulativeReturn = values.length >= 2 ? percent(current, values[0]) : null
+  const ma5 = values.length >= 5 ? average(values.slice(-5)) : null
+  const ma20 = values.length >= 20 ? average(values.slice(-20)) : null
+  const ma60 = values.length >= 60 ? average(values.slice(-60)) : null
+  const priceVsMa20 = ma20 !== null ? percent(current, ma20) : null
+  const ma5VsMa20 = ma5 !== null && ma20 !== null ? percent(ma5, ma20) : null
+
+  const returns20 = values.length >= 21
+    ? values.slice(-21).map((value, index, array) => index === 0 ? null : percent(value, array[index - 1])).filter((value): value is number => value !== null)
+    : []
+  const volatility20 = returns20.length >= 20
+    ? Math.sqrt(returns20.reduce((sum, value) => {
+      const mean = average(returns20)
+      return sum + (value - mean) ** 2
+    }, 0) / (returns20.length - 1))
+    : null
+
+  if (weeklyReturn === null) missing.push('주간 수익률')
+  if (monthlyReturn === null) missing.push('월간 수익률')
+  if (ma20 === null) missing.push('20기간 이동평균')
+  if (ma60 === null) missing.push('60기간 이동평균')
+  if (volatility20 === null) missing.push('20기간 변동성')
+
+  const direction = cumulativeReturn === null ? '데이터 확인 중' : cumulativeReturn > 0 ? '누적 상승 흐름' : cumulativeReturn < 0 ? '누적 하락 흐름' : '보합권'
+  const summary = priceVsMa20 !== null
+    ? `현재 가격은 20기간 평균보다 약 ${Math.abs(priceVsMa20).toFixed(1)}% ${priceVsMa20 >= 0 ? '높은' : '낮은'} 수준입니다.`
+    : '현재 차트 데이터만으로는 20기간 평균선 비교가 제한됩니다.'
+
+  return {
+    headline: direction,
+    summary,
+    missing,
+    rows: [
+      { label: '현재 가격', value: formatNumber(current), note: '지금 차트에서 가장 마지막에 찍힌 가격이에요.', tone: 'muted' },
+      { label: '1기간 수익률', value: formatPct(dailyReturn), note: '바로 전 가격보다 얼마나 올랐거나 내렸는지 보여줘요.', tone: tone(dailyReturn) },
+      { label: '7기간 수익률', value: formatPct(weeklyReturn), note: '최근 일주일 정도의 짧은 흐름을 볼 때 참고해요.', tone: tone(weeklyReturn) },
+      { label: '30기간 수익률', value: formatPct(monthlyReturn), note: '최근 한 달 정도의 방향을 크게 확인할 때 써요.', tone: tone(monthlyReturn) },
+      { label: '누적 수익률', value: formatPct(cumulativeReturn), note: '선택한 기간 처음부터 지금까지의 전체 변화예요.', tone: tone(cumulativeReturn) },
+      { label: '5기간 평균', value: formatNumber(ma5), note: '최근 가격 몇 개를 평균낸 값이라 짧은 분위기를 보여줘요.', tone: 'muted' },
+      { label: '20기간 평균', value: formatNumber(ma20), note: '조금 더 긴 흐름의 기준선처럼 볼 수 있어요.', tone: 'muted' },
+      { label: '현재가 vs 20평균', value: formatPct(priceVsMa20), note: '현재 가격이 기준선보다 위인지 아래인지 알려줘요.', tone: tone(priceVsMa20) },
+      { label: '5평균 vs 20평균', value: formatPct(ma5VsMa20), note: '짧은 흐름이 긴 흐름보다 강한지 비교해요.', tone: tone(ma5VsMa20) },
+      { label: '20기간 변동성', value: formatPct(volatility20), note: '값이 높을수록 가격이 더 크게 흔들렸다는 뜻이에요.', tone: volatility20 === null ? 'muted' : volatility20 >= 25 ? 'down' : volatility20 >= 10 ? 'warn' : 'up' },
+    ],
+  }
 }

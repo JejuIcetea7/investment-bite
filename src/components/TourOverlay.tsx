@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type { TourStep } from '../types'
-import { TOUR_STEPS } from '../constants'
 
 export default function TourOverlay({
   active,
@@ -25,6 +24,13 @@ export default function TourOverlay({
     '[data-tour="know"]': '/charcter/공부하는_아이콘.png',
     '[data-tour="quiz"]': '/charcter/투자_상식_카드_아이콘.png',
     '[data-tour="news"]': '/charcter/뉴스_아이콘.png',
+    '[data-tour="whole-sector-tabs"]': '/charcter/궁금한_아이콘.png',
+    '[data-tour="whole-stock-summary"]': '/charcter/공부하는_아이콘.png',
+    '[data-tour="whole-watch-toggle"]': '/charcter/하트_아이콘.png',
+    '[data-tour="whole-alert-button"]': '/charcter/느낌표_아이콘.png',
+    '[data-tour="news-top"]': '/charcter/뉴스_아이콘.png',
+    '[data-tour="news-sector-tabs"]': '/charcter/궁금한_아이콘.png',
+    '[data-tour="news-sector-list"]': '/charcter/뉴스_아이콘.png',
   }
 
   useEffect(() => {
@@ -85,7 +91,7 @@ export default function TourOverlay({
         {charSrc && (
           <img src={charSrc} className="tour-char-outside" alt="가이드 캐릭터" />
         )}
-        <span className="tour-step-label">STEP {step + 1} / {TOUR_STEPS.length}</span>
+        <span className="tour-step-label">STEP {step + 1} / {steps.length}</span>
         <div className="tour-title">{box.title}</div>
         <div className="tour-text">{box.text}</div>
         <div className="tour-foot">

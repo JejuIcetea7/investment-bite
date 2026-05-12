@@ -7,7 +7,7 @@ export default function ChartArea({
 }: {
   data: number[]
   isUp?: boolean
-  onHover?: (index: number | null, clientX: number, clientY: number) => void
+  onHover?: (index: number | null, xRatio: number, yRatio: number) => void
 }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const width = 720
@@ -18,7 +18,8 @@ export default function ChartArea({
   const range = max - min || 1
 
   const points = data.map((value, index) => {
-    const x = padding + (index / (data.length - 1)) * (width - padding * 2)
+    const ratio = data.length > 1 ? index / (data.length - 1) : 0
+    const x = padding + ratio * (width - padding * 2)
     const y = padding + (1 - (value - min) / range) * (height - padding * 2)
     return [x, y] as const
   })
@@ -32,22 +33,22 @@ export default function ChartArea({
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = e.currentTarget
     const rect = svg.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const x = ((e.clientX - rect.left) / rect.width) * width
 
     let closestIndex = 0
     let closestDist = Infinity
-    points.forEach(([px, py], idx) => {
-      const dist = Math.sqrt((px - x) ** 2 + (py - y) ** 2)
+    points.forEach(([px], idx) => {
+      const dist = Math.abs(px - x)
       if (dist < closestDist) {
         closestDist = dist
         closestIndex = idx
       }
     })
 
-    if (closestDist < 30) {
+    const pointGap = data.length > 1 ? (width - padding * 2) / (data.length - 1) : width
+    if (closestDist <= Math.max(pointGap / 2, 12)) {
       setHoveredIndex(closestIndex)
-      if (onHover) onHover(closestIndex, e.clientX, e.clientY)
+      if (onHover) onHover(closestIndex, points[closestIndex][0] / width, points[closestIndex][1] / height)
     } else {
       setHoveredIndex(null)
       if (onHover) onHover(null, 0, 0)
