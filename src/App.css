@@ -1307,6 +1307,124 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.propensity-dna {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 16px;
+  align-items: center;
+  margin-top: 8px;
+}
+.propensity-character {
+  width: 92px;
+  height: 92px;
+  border-radius: 18px;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+}
+.propensity-character img {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+}
+.propensity-dna-main {
+  min-width: 0;
+}
+.propensity-result-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.propensity-badge {
+  background: var(--point);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.propensity-score {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.propensity-type-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 6px;
+  letter-spacing: 0;
+}
+.propensity-summary {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.65;
+}
+.propensity-insight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.propensity-insight {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px;
+  background: rgba(255, 255, 255, 0.56);
+}
+.propensity-insight-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.propensity-insight-item {
+  position: relative;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.55;
+  padding-left: 12px;
+}
+.propensity-insight-item + .propensity-insight-item {
+  margin-top: 6px;
+}
+.propensity-insight-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--point);
+}
+.propensity-analysis-sections {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.propensity-analysis-section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px;
+  background: rgba(255, 255, 255, 0.56);
+}
+.propensity-analysis-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.propensity-recommendation {
+  margin-top: 12px;
+}
 
 .btn-primary {
   background: var(--point);
@@ -1336,6 +1454,19 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .propensity-cta {
   margin-top: 12px;
+}
+.propensity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.propensity-actions .propensity-cta {
+  margin-top: 0;
+}
+.btn-ghost:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
 }
 
 /* ===== Section 6: Knowledge cards ===== */
@@ -2024,6 +2155,25 @@ html { scroll-behavior: smooth; }
   .whole-panel-badge {
     white-space: normal;
   }
+  .propensity-dna {
+    grid-template-columns: 72px 1fr;
+    gap: 12px;
+  }
+  .propensity-character {
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+  }
+  .propensity-character img {
+    width: 58px;
+    height: 58px;
+  }
+  .propensity-type-title {
+    font-size: 19px;
+  }
+  .propensity-insight-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* =========================================================
@@ -2125,6 +2275,13 @@ html { scroll-behavior: smooth; }
 .app.pro .propensity-bar-fill { background: var(--point); }
 .app.pro .propensity-bar-fill.point { background: var(--point); }
 .app.pro .propensity-val { color: var(--ink); }
+.app.pro .propensity-character { background: #20180c; border-color: var(--line); }
+.app.pro .propensity-badge { background: var(--point); color: #1a1208; }
+.app.pro .propensity-type-title { color: var(--point); }
+.app.pro .propensity-insight { background: var(--card); border-color: var(--line); }
+.app.pro .propensity-analysis-section { background: var(--card); border-color: var(--line); }
+.app.pro .propensity-insight-title { color: var(--point); }
+.app.pro .propensity-insight-item::before { background: var(--point); }
 
 .app.pro .btn-primary { background: var(--point); color: #1a1208; }
 .app.pro .btn-primary:hover { background: var(--point-deep); }

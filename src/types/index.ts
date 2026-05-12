@@ -61,6 +61,13 @@ export type PropensityResult = {
   score: number
   summary: string
   note: string
+  characterImage: string
+  characterAlt: string
+  llmSummary?: string
+  strengths?: string[]
+  cautions?: string[]
+  recommendation?: string
+  analysisSource?: 'llm' | 'rule'
   traits: Array<{ label: string; val: number; point: boolean }>
 }
 

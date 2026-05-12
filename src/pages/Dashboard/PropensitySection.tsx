@@ -4,20 +4,28 @@ import EditableWidgetShell from '../../components/EditableWidgetShell'
 
 export default function PropensitySection({
   propensityResult,
+  analysisLoading,
   beginner,
   hiddenWidgets,
   editMode,
-  onStartAnalysis,
+  onRestartSurvey,
   onToggle,
 }: {
   propensityResult: PropensityResult | null
+  analysisLoading: boolean
   beginner: boolean
   hiddenWidgets: DashboardWidgetKey[]
   editMode: boolean
-  onStartAnalysis: () => void
+  onRestartSurvey: () => void
   onToggle: () => void
 }) {
   const [whyPropOpen, setWhyPropOpen] = useState(false)
+  const summaryItems = (analysisLoading
+    ? ['설문 결과를 바탕으로 맞춤 해석을 작성하고 있어요.']
+    : (propensityResult?.llmSummary || propensityResult?.summary || '').split(/(?<=[.!?。]|요\.|다\.)\s+/)
+  ).filter(Boolean).slice(0, 3)
+  const strengthsText = (propensityResult?.strengths ?? []).join(' ')
+  const cautionsText = (propensityResult?.cautions ?? []).join(' ')
 
   return (
     <EditableWidgetShell widgetKey="propensity" visible={!hiddenWidgets.includes('propensity')} editMode={editMode} onToggle={onToggle}>
@@ -36,11 +44,11 @@ export default function PropensitySection({
               <div className={`why-pop ${whyPropOpen ? 'show' : ''}`}>
                 <span className="why-pop-tag">왜 이 성향일까?</span>
                 <div className="why-pop-title">나의 투자 DNA 분석</div>
-                <div className="why-pop-text">설문 답변과 관심 종목의 변동성을 바탕으로 성향을 계산합니다.</div>
+                <div className="why-pop-text">설문 답변을 먼저 5가지 성향으로 분류하고, LLM이 결과 설명을 자연스럽게 정리합니다.</div>
                 <div className="why-pop-list">
-                  <div className="why-pop-li">손실 감내 수준 · 투자 기간 반영</div>
-                  <div className="why-pop-li">관심 종목 리스크 프로파일 분석</div>
-                  <div className="why-pop-li">4개 질문 → 안정형~공격형 분류</div>
+                  <div className="why-pop-li">투자 기간 · 하락 대응 · 성장 선호 반영</div>
+                  <div className="why-pop-li">5개 성향 중 하나로 룰베이스 분류</div>
+                  <div className="why-pop-li">LLM 분석 실패 시 기본 해석으로 표시</div>
                 </div>
               </div>
             </div>
@@ -48,47 +56,49 @@ export default function PropensitySection({
         </div>
         {propensityResult ? (
           <>
-            <div className="propensity">
-              <div className="donut-wrap">
-                <svg viewBox="0 0 120 120" width="130" height="130">
-                  <circle cx="60" cy="60" r="48" fill="none" stroke="#f7f6f4" strokeWidth="14" />
-                  <circle
-                    cx="60" cy="60" r="48" fill="none" stroke="#facc18" strokeWidth="14"
-                    strokeDasharray={`${2 * Math.PI * 48}`}
-                    strokeDashoffset={`${2 * Math.PI * 48 * (1 - propensityResult.score / 100)}`}
-                    transform="rotate(-90 60 60)"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="donut-center">
-                  <div className="donut-type">{propensityResult.title}</div>
-                  <div className="donut-score">스코어 {propensityResult.score}</div>
-                </div>
+            <div className="propensity-dna">
+              <div className="propensity-character">
+                <img src={propensityResult.characterImage} alt={propensityResult.characterAlt} />
               </div>
-              <div className="propensity-list">
-                {propensityResult.traits.map((trait) => (
-                  <div key={trait.label} className="propensity-row">
-                    <div className="propensity-label">{trait.label}</div>
-                    <div className="propensity-bar">
-                      <div className={`propensity-bar-fill ${trait.point ? 'point' : ''}`} style={{ width: `${trait.val}%` }} />
-                    </div>
-                    <div className="propensity-val">{trait.val}</div>
-                  </div>
+              <div className="propensity-dna-main">
+                <div className="propensity-result-top">
+                  <span className="propensity-badge">{propensityResult.badge}</span>
+                </div>
+                <div className="propensity-type-title">{propensityResult.title}</div>
+                <div className="propensity-summary">{propensityResult.summary}</div>
+              </div>
+            </div>
+            <div className="propensity-analysis-sections">
+              <div className="propensity-analysis-section">
+                <div className="propensity-insight-title">성향 요약</div>
+                {summaryItems.map((item) => (
+                  <div key={item} className="propensity-insight-item">{item}</div>
                 ))}
               </div>
+              <div className="propensity-analysis-section">
+                <div className="propensity-insight-title">투자 특징</div>
+                <p className="propensity-analysis-text">{strengthsText || propensityResult.summary}</p>
+              </div>
+              <div className="propensity-analysis-section">
+                <div className="propensity-insight-title">주의할 점</div>
+                <p className="propensity-analysis-text">{cautionsText || propensityResult.note}</p>
+              </div>
+              <div className="propensity-analysis-section">
+                <div className="propensity-insight-title">한 줄 조언</div>
+                <p className="propensity-analysis-text">{analysisLoading ? '분석이 끝나면 설문 답변에 맞춘 조언이 표시됩니다.' : (propensityResult.recommendation || propensityResult.note)}</p>
+              </div>
             </div>
-            <div className="glossary-mini" style={{ marginTop: 12 }}>
-              {propensityResult.badge} · {propensityResult.summary} {beginner ? ` ${propensityResult.note}` : ''}
+            <div className="propensity-actions">
+              <button className="btn-ghost propensity-cta" onClick={onRestartSurvey}>재설문</button>
             </div>
-            <button className="btn-ghost propensity-cta" onClick={onStartAnalysis}>다시 분석하기</button>
           </>
         ) : (
           <div style={{ display: 'grid', gap: 12, alignItems: 'start' }}>
             <div style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.7 }}>
               4개의 질문으로 투자 성향을 분석하고, 내 성향에 맞는 해석을 보여드려요.
             </div>
-            <button className="btn-primary propensity-cta" onClick={onStartAnalysis}>성향 분석 시작하기</button>
-            <div className="glossary-mini">분석을 완료하면 안정형, 균형형, 성장형, 공격형 중 하나로 정리됩니다.</div>
+            <button className="btn-primary propensity-cta" onClick={onRestartSurvey}>성향 분석 시작하기</button>
+            <div className="glossary-mini">분석을 완료하면 5가지 투자 성향 중 하나로 정리됩니다.</div>
           </div>
         )}
       </section>
