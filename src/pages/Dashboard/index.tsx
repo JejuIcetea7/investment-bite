@@ -81,6 +81,74 @@ export default function DashboardPage({
   const isDailyQuizAnswered = selectedDailyAnswer !== null
   const dailyQuizSolvedCount = Math.min(dailyQuizIndex + (isDailyQuizAnswered ? 1 : 0), dailyQuizzes.length)
   const dailyQuizProgress = dailyQuizzes.length > 0 ? (dailyQuizSolvedCount / dailyQuizzes.length) * 100 : 0
+  const dashboardWidgets = [
+    {
+      key: 'watch' as const,
+      node: (
+        <WatchlistSection
+          watchlist={marketData.watchlist}
+          selectedWatchItem={selectedWatchItem}
+          beginner={beginner}
+          hiddenWidgets={hiddenWidgets}
+          editMode={dashboardEditMode}
+          onSelect={setSelectedWatchItem}
+          onToggle={() => onToggleWidget('watch')}
+        />
+      ),
+    },
+    {
+      key: 'propensity' as const,
+      node: (
+        <PropensitySection
+          propensityResult={propensityResult}
+          analysisLoading={analysisLoading}
+          beginner={beginner}
+          hiddenWidgets={hiddenWidgets}
+          editMode={dashboardEditMode}
+          onRestartSurvey={onRestartSurvey}
+          onToggle={() => onToggleWidget('propensity')}
+        />
+      ),
+    },
+    {
+      key: 'know' as const,
+      node: (
+        <KnowledgeSection
+          knowledgeCards={knowledgeCards}
+          beginner={beginner}
+          hiddenWidgets={hiddenWidgets}
+          editMode={dashboardEditMode}
+          onRefresh={onRefreshKnowledge}
+          onToggle={() => onToggleWidget('know')}
+        />
+      ),
+    },
+    {
+      key: 'quiz' as const,
+      node: (
+        <QuizSection
+          dailyQuizzes={dailyQuizzes}
+          currentDailyQuiz={currentDailyQuiz}
+          isDailyQuizComplete={isDailyQuizComplete}
+          isDailyQuizAnswered={isDailyQuizAnswered}
+          dailyQuizSolvedCount={dailyQuizSolvedCount}
+          dailyQuizProgress={dailyQuizProgress}
+          dailyQuizCorrectCount={dailyQuizCorrectCount}
+          selectedDailyAnswer={selectedDailyAnswer}
+          beginner={beginner}
+          hiddenWidgets={hiddenWidgets}
+          editMode={dashboardEditMode}
+          onPickAnswer={onPickQuizAnswer}
+          onNextQuiz={onNextQuiz}
+          onRestart={onRestartQuiz}
+          onToggle={() => onToggleWidget('quiz')}
+        />
+      ),
+    },
+  ]
+  const visibleDashboardWidgets = dashboardEditMode
+    ? dashboardWidgets
+    : dashboardWidgets.filter((widget) => !hiddenWidgets.includes(widget.key))
 
   return (
     <>
@@ -93,49 +161,13 @@ export default function DashboardPage({
         setHoverHelp={setHoverHelp}
       />
       <NewsSummarySection onNavigateToNews={onNavigateToNews} />
-      <WatchlistSection
-        watchlist={marketData.watchlist}
-        selectedWatchItem={selectedWatchItem}
-        beginner={beginner}
-        hiddenWidgets={hiddenWidgets}
-        editMode={dashboardEditMode}
-        onSelect={setSelectedWatchItem}
-        onToggle={() => onToggleWidget('watch')}
-      />
-      <PropensitySection
-        propensityResult={propensityResult}
-        analysisLoading={analysisLoading}
-        beginner={beginner}
-        hiddenWidgets={hiddenWidgets}
-        editMode={dashboardEditMode}
-        onRestartSurvey={onRestartSurvey}
-        onToggle={() => onToggleWidget('propensity')}
-      />
-      <KnowledgeSection
-        knowledgeCards={knowledgeCards}
-        beginner={beginner}
-        hiddenWidgets={hiddenWidgets}
-        editMode={dashboardEditMode}
-        onRefresh={onRefreshKnowledge}
-        onToggle={() => onToggleWidget('know')}
-      />
-      <QuizSection
-        dailyQuizzes={dailyQuizzes}
-        currentDailyQuiz={currentDailyQuiz}
-        isDailyQuizComplete={isDailyQuizComplete}
-        isDailyQuizAnswered={isDailyQuizAnswered}
-        dailyQuizSolvedCount={dailyQuizSolvedCount}
-        dailyQuizProgress={dailyQuizProgress}
-        dailyQuizCorrectCount={dailyQuizCorrectCount}
-        selectedDailyAnswer={selectedDailyAnswer}
-        beginner={beginner}
-        hiddenWidgets={hiddenWidgets}
-        editMode={dashboardEditMode}
-        onPickAnswer={onPickQuizAnswer}
-        onNextQuiz={onNextQuiz}
-        onRestart={onRestartQuiz}
-        onToggle={() => onToggleWidget('quiz')}
-      />
+      <div className="dashboard-widget-columns">
+        {visibleDashboardWidgets.map((widget) => (
+          <div key={widget.key} className="dashboard-widget-slot">
+            {widget.node}
+          </div>
+        ))}
+      </div>
     </>
   )
 }
