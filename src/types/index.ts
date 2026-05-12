@@ -29,6 +29,8 @@ export type MarketStatus = {
   volatilityLevel: 'low' | 'medium' | 'high' | 'unknown'
 }
 
+export type DataQualityStatus = 'normal' | 'partial' | 'price_error' | 'analysis_unavailable'
+
 export type ChartData = {
   symbol: string
   name: string
@@ -48,6 +50,53 @@ export type WatchItem = {
   chg: string
   up: boolean
   series: number[]
+}
+
+export type SectorStock = {
+  name: string
+  symbol: string
+  price: string
+  krwPrice?: string
+  change: string
+  changePercent: string
+  up: boolean
+  currency: string
+  status?: MarketStatus['signal']
+  statusLabel?: string
+  statusSummary?: string
+  reasonCodes?: string[]
+  volatilityLevel?: MarketStatus['volatilityLevel']
+  dataQuality?: DataQualityStatus
+  dataQualityLabel?: string
+  dataQualitySummary?: string
+}
+
+export type PriceAlertDirection = 'above' | 'below'
+
+export type PriceAlert = {
+  id: string
+  name: string
+  symbol: string
+  targetPrice: number
+  direction: PriceAlertDirection
+  currency: string
+  active: boolean
+  createdAt: string
+  triggeredAt?: string
+  triggeredPrice?: string
+}
+
+export type SectorStockGroup = {
+  key: NewsSectorKey
+  label: string
+  stocks: SectorStock[]
+}
+
+export type SectorStocksData = {
+  generatedAt: string
+  generatedAtLabel: string
+  usdKrwRate?: number | null
+  sectors: SectorStockGroup[]
 }
 
 export type PropensityQuestion = {

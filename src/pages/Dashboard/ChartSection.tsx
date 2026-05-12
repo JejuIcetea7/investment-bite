@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { ChartData, MarketStatus, HoverHelp } from '../../types'
 import { STAT_HELP } from '../../constants'
 import ChartArea from '../../components/ChartArea'
-import { edgeFunctionUrl, edgeFunctionHeaders } from '../../lib/supabase'
+import { edgeFunctionUrl, edgeFunctionHeaders, hasSupabaseConfig } from '../../lib/supabase'
 
 export default function ChartSection({
   displayChart,
@@ -34,6 +34,7 @@ export default function ChartSection({
     setWhyOpen(next)
     if (!next) return
     if (whyCacheSymbol.current === displayChart.symbol && whyData) return
+    if (!hasSupabaseConfig) return
 
     setWhyLoading(true)
     try {
@@ -56,6 +57,12 @@ export default function ChartSection({
 
   useEffect(() => {
     const controller = new AbortController()
+    if (!hasSupabaseConfig) {
+      setChartSeries(null)
+      setChartLoading(false)
+      return () => controller.abort()
+    }
+
     setChartLoading(true)
     const url = new URL(edgeFunctionUrl('get-chart'))
     url.searchParams.set('symbol', displayChart.symbol)

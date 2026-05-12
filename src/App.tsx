@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
-import { edgeFunctionUrl, edgeFunctionHeaders } from './lib/supabase'
-import type { MarketData, DailyQuiz, DailyQuizData, KnowledgeCard, NewsData, NewsArticle, WatchItem, PropensityResult, DashboardWidgetKey } from './types'
+import { edgeFunctionUrl, edgeFunctionHeaders, hasSupabaseConfig } from './lib/supabase'
+import type { MarketData, DailyQuiz, DailyQuizData, KnowledgeCard, NewsData, NewsArticle, WatchItem, PropensityResult, DashboardWidgetKey, SectorStock, PriceAlert, PriceAlertDirection } from './types'
 import { DASHBOARD_WIDGETS, TOUR_STEPS, STOCK_ALIASES } from './constants'
 import defaultMarketData from './data/defaultMarketData'
 import { normalizeSearchText, createPropensityResult, createPropensitySurveyPayload } from './utils'
@@ -75,6 +75,8 @@ type UserProfile = {
 const USER_PROFILE_KEY = 'investment-bite-user-profile'
 const PROPENSITY_RESULT_KEY = 'investment-bite-propensity-result'
 const PROPENSITY_ANALYSIS_CACHE_KEY = 'investment-bite-propensity-analysis-cache'
+const WATCHLIST_STORAGE_KEY = 'investment-bite-watchlist'
+const PRICE_ALERTS_STORAGE_KEY = 'investment-bite-price-alerts'
 
 type SavedPropensityResult = {
   answers: number[]
@@ -83,6 +85,68 @@ type SavedPropensityResult = {
 }
 
 type CachedPropensityAnalysis = Pick<PropensityResult, 'llmSummary' | 'strengths' | 'cautions' | 'recommendation'>
+
+const parsePriceValue = (price: string) => {
+  const normalized = price.replace(/[$,원\s]/g, '')
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const createWatchItemFromSectorStock = (stock: SectorStock): WatchItem => {
+  const changeValue = Number(stock.changePercent.replace('%', ''))
+  const magnitude = Number.isFinite(changeValue) ? Math.min(Math.max(Math.abs(changeValue), 0.4), 6) : 1
+  const direction = stock.up ? 1 : -1
+  return {
+    name: stock.name,
+    symbol: stock.symbol,
+    price: stock.price,
+    chg: stock.changePercent,
+    up: stock.up,
+    series: Array.from({ length: 8 }, (_, index) => 10 + direction * index * (magnitude / 7)),
+  }
+}
+
+const readStoredWatchlist = (): WatchItem[] | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(WATCHLIST_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return null
+    return parsed.filter((item): item is WatchItem => (
+      typeof item?.name === 'string' &&
+      typeof item?.symbol === 'string' &&
+      typeof item?.price === 'string' &&
+      typeof item?.chg === 'string' &&
+      typeof item?.up === 'boolean' &&
+      Array.isArray(item?.series)
+    ))
+  } catch {
+    return null
+  }
+}
+
+const readStoredPriceAlerts = (): PriceAlert[] => {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(PRICE_ALERTS_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((item): item is PriceAlert => (
+      typeof item?.id === 'string' &&
+      typeof item?.name === 'string' &&
+      typeof item?.symbol === 'string' &&
+      typeof item?.targetPrice === 'number' &&
+      (item?.direction === 'above' || item?.direction === 'below') &&
+      typeof item?.currency === 'string' &&
+      typeof item?.active === 'boolean' &&
+      typeof item?.createdAt === 'string'
+    ))
+  } catch {
+    return []
+  }
+}
 
 const getAvatarInitial = (nickname: string) => {
   const normalized = nickname.trim()
@@ -150,6 +214,9 @@ function App() {
   const [propensityAnalysisLoading, setPropensityAnalysisLoading] = useState(false)
   const [hoverHelp, setHoverHelp] = useState<{ title: string; text: string; x: number; y: number } | null>(null)
   const [selectedWatchItem, setSelectedWatchItem] = useState<WatchItem | null>(null)
+  const [customWatchlist, setCustomWatchlist] = useState<WatchItem[]>(() => readStoredWatchlist() ?? defaultMarketData.watchlist)
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>(() => readStoredPriceAlerts())
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [dashboardEditMode, setDashboardEditMode] = useState(false)
@@ -190,7 +257,11 @@ function App() {
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
     let ignore = false
-    fetch(edgeFunctionUrl('get-market'), { headers: edgeFunctionHeaders() })
+    const marketRequest = hasSupabaseConfig
+      ? fetch(edgeFunctionUrl('get-market'), { headers: edgeFunctionHeaders() })
+      : Promise.reject(new Error('Supabase config missing'))
+
+    marketRequest
       .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<MarketData> })
       .then((payload) => { if (!ignore) { setMarketData(payload); setDataSource('Yahoo Finance') } })
       .catch(() => {
@@ -203,6 +274,16 @@ function App() {
       .finally(() => { if (!ignore) setTimeout(() => setLoadingVisible(false), 350) })
     return () => { ignore = true }
   }, [])
+
+  useEffect(() => {
+    try { window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(customWatchlist)) }
+    catch { /* ignore */ }
+  }, [customWatchlist])
+
+  useEffect(() => {
+    try { window.localStorage.setItem(PRICE_ALERTS_STORAGE_KEY, JSON.stringify(priceAlerts)) }
+    catch { /* ignore */ }
+  }, [priceAlerts])
 
   useEffect(() => {
     let ignore = false
@@ -229,7 +310,11 @@ function App() {
     }
 
     // Edge Function에서 실시간 뉴스 가져오기, 실패 시 캐시된 news.json fallback
-    fetch(edgeFunctionUrl('get-news'), { headers: edgeFunctionHeaders() })
+    const newsRequest = hasSupabaseConfig
+      ? fetch(edgeFunctionUrl('get-news'), { headers: edgeFunctionHeaders() })
+      : Promise.reject(new Error('Supabase config missing'))
+
+    newsRequest
       .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json() as Promise<NewsData> })
       .then(data => {
         localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }))
@@ -281,13 +366,25 @@ function App() {
   }, [pickFading])
 
   const normalizedSearchQuery = normalizeSearchText(searchQuery)
+  const dashboardMarketData = useMemo(() => ({
+    ...marketData,
+    watchlist: customWatchlist,
+  }), [customWatchlist, marketData])
+  const triggeredAlerts = useMemo(
+    () => priceAlerts.filter((alert) => !alert.active && alert.triggeredAt).sort((a, b) => (b.triggeredAt ?? '').localeCompare(a.triggeredAt ?? '')),
+    [priceAlerts],
+  )
+  const activeAlerts = useMemo(
+    () => priceAlerts.filter((alert) => alert.active),
+    [priceAlerts],
+  )
   const searchMatches = useMemo(() => {
     if (normalizedSearchQuery.length < 2) return []
-    return marketData.watchlist.filter((stock) => {
+    return customWatchlist.filter((stock) => {
       const aliases = STOCK_ALIASES[stock.symbol] ?? []
       return [stock.name, stock.symbol, ...aliases].map(normalizeSearchText).join(' ').includes(normalizedSearchQuery)
     })
-  }, [marketData.watchlist, normalizedSearchQuery])
+  }, [customWatchlist, normalizedSearchQuery])
   const showSearchSuggestions = searchFocused && normalizedSearchQuery.length >= 2
 
   const visibleTourSteps = useMemo(
@@ -328,6 +425,7 @@ function App() {
 
     setPropensityAnalysisLoading(true)
     try {
+      if (!hasSupabaseConfig) throw new Error('Supabase config missing')
       const response = await fetch(edgeFunctionUrl('analyze-propensity'), {
         method: 'POST',
         headers: { ...edgeFunctionHeaders(), 'Content-Type': 'application/json' },
@@ -385,6 +483,65 @@ function App() {
   const toggleDashboardWidget = (key: DashboardWidgetKey) => {
     setHiddenWidgets((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])
   }
+
+  const toggleWatchStock = (stock: SectorStock) => {
+    setCustomWatchlist((current) => {
+      const exists = current.some((item) => item.symbol === stock.symbol)
+      if (exists) {
+        if (selectedWatchItem?.symbol === stock.symbol) setSelectedWatchItem(null)
+        return current.filter((item) => item.symbol !== stock.symbol)
+      }
+      return [...current, createWatchItemFromSectorStock(stock)]
+    })
+  }
+
+  const addPriceAlert = (stock: SectorStock, targetPrice: number, direction: PriceAlertDirection) => {
+    setPriceAlerts((current) => [
+      {
+        id: `${stock.symbol}-${Date.now()}`,
+        name: stock.name,
+        symbol: stock.symbol,
+        targetPrice,
+        direction,
+        currency: stock.currency,
+        active: true,
+        createdAt: new Date().toISOString(),
+      },
+      ...current,
+    ])
+    setNotificationsOpen(true)
+  }
+
+  const removePriceAlert = (id: string) => {
+    setPriceAlerts((current) => current.filter((alert) => alert.id !== id))
+  }
+
+  const checkPriceAlerts = useCallback((stocks: SectorStock[]) => {
+    setPriceAlerts((current) => {
+      let changed = false
+      const stockMap = new Map(stocks.map((stock) => [stock.symbol, stock]))
+      const next = current.map((alert) => {
+        if (!alert.active) return alert
+        const stock = stockMap.get(alert.symbol)
+        if (!stock) return alert
+        const currentPrice = parsePriceValue(stock.price)
+        if (currentPrice === null) return alert
+        const reached = alert.direction === 'above'
+          ? currentPrice >= alert.targetPrice
+          : currentPrice <= alert.targetPrice
+        if (!reached) return alert
+        changed = true
+        return {
+          ...alert,
+          active: false,
+          triggeredAt: new Date().toISOString(),
+          triggeredPrice: stock.price,
+        }
+      })
+      if (changed) setNotificationsOpen(true)
+      return changed ? next : current
+    })
+  }, [])
 
   const refreshKnowledgeCards = () => {
     const currentIds = new Set(knowledgeCards.map((c) => c.id))
@@ -522,8 +679,46 @@ function App() {
               </div>
             )}
           </div>
-          <button className="header-btn" title="알림">🔔<span className="badge" /></button>
-          <button className="header-btn" title="설정">⚙</button>
+          <div className="notification-wrap">
+            <button
+              className="header-btn"
+              title="알림"
+              aria-expanded={notificationsOpen}
+              onClick={() => setNotificationsOpen((value) => !value)}
+            >
+              🔔
+              {triggeredAlerts.length > 0 && <span className="badge" />}
+            </button>
+            {notificationsOpen && (
+              <div className="notification-pop">
+                <div className="notification-head">
+                  <div>
+                    <div className="notification-title">가격 알림</div>
+                    <div className="notification-sub">{activeAlerts.length}개 대기 · {triggeredAlerts.length}개 도달</div>
+                  </div>
+                </div>
+                <div className="notification-list">
+                  {priceAlerts.length > 0 ? priceAlerts.map((alert) => (
+                    <div key={alert.id} className={`notification-item ${alert.active ? '' : 'triggered'}`}>
+                      <div>
+                        <div className="notification-stock">{alert.name}</div>
+                        <div className="notification-text">
+                          {alert.symbol} · {alert.direction === 'above' ? '이상' : '이하'} {alert.targetPrice.toLocaleString(alert.currency === 'KRW' ? 'ko-KR' : 'en-US')}
+                          {alert.currency === 'KRW' ? '원' : '달러'}
+                        </div>
+                        {!alert.active && (
+                          <div className="notification-hit">도달가 {alert.triggeredPrice ?? '-'}</div>
+                        )}
+                      </div>
+                      <button className="notification-remove" onClick={() => removePriceAlert(alert.id)}>×</button>
+                    </div>
+                  )) : (
+                    <div className="notification-empty">설정한 가격 알림이 없습니다.</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <div className="user-chip">
             <div className="user-avatar">{avatarInitial}</div>
             <span className="user-name">{displayNickname}</span>
@@ -542,14 +737,16 @@ function App() {
           )}
           {active !== 'news' && isWholeView && (
             <WholePage
-              watchlist={marketData.watchlist}
-              selectedSymbol={selectedWatchItem?.symbol ?? null}
-              onSelect={setSelectedWatchItem}
+              watchlistSymbols={customWatchlist.map((item) => item.symbol)}
+              priceAlerts={priceAlerts}
+              onToggleWatch={toggleWatchStock}
+              onAddPriceAlert={addPriceAlert}
+              onPricesUpdate={checkPriceAlerts}
             />
           )}
           {active !== 'news' && !isWholeView && (
             <DashboardPage
-              marketData={marketData}
+              marketData={dashboardMarketData}
               dataSource={dataSource}
               beginner={beginner}
               selectedWatchItem={selectedWatchItem}
