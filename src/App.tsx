@@ -15,6 +15,59 @@ import WholePage from './pages/WholePage'
 import NewsPage from './pages/NewsPage'
 import NewsDetailModal from './pages/NewsPage/NewsDetailModal'
 
+const TODAY_PICKS = [
+  {
+    emoji: '👶',
+    title: '워렌 버핏의 첫 실수',
+    desc: '11살에 주식을 팔아 20달러 벌었어요. 그 주식은 나중에 200달러가 됐죠.',
+  },
+  {
+    emoji: '🚫',
+    title: '217번의 거절',
+    desc: '스타벅스 창업자는 217곳에서 투자를 거절당했어요.',
+  },
+  {
+    emoji: '💸',
+    title: '800달러의 실수',
+    desc: '애플 지분 10%를 800달러에 팔았어요. 지금 가치는 수조 원이에요.',
+  },
+  {
+    emoji: '📈',
+    title: '전쟁 중에 오른 주식',
+    desc: '2차 세계대전 중에도 S&P500은 꾸준히 올랐어요.',
+  },
+  {
+    emoji: '🐢',
+    title: '느려도 이기는 법',
+    desc: '버핏 재산의 99%는 50세 이후에 쌓였어요. 참는 게 실력이에요.',
+  },
+  {
+    emoji: '🎰',
+    title: '카지노보다 나은 주식',
+    desc: '카지노 승률은 49%, S&P500 장기 수익 확률은 75%예요.',
+  },
+  {
+    emoji: '🧾',
+    title: '하루 차이의 세금',
+    desc: '1년 미만 매매는 세금이 더 많아요. 하루 차이로 수익이 달라져요.',
+  },
+  {
+    emoji: '🌍',
+    title: '가장 비싼 주식',
+    desc: '버크셔 해서웨이 A주 한 주는 약 7억 원이에요.',
+  },
+  {
+    emoji: '🍕',
+    title: '피자 두 판의 전설',
+    desc: '비트코인 1만 개로 피자 두 판을 샀어요. 지금 가치는 수천억 원이에요.',
+  },
+  {
+    emoji: '📉',
+    title: '폭락은 늘 있었다',
+    desc: 'S&P500은 50% 이상 폭락을 세 번 겪었어요. 그래도 결국 올랐죠.',
+  },
+]
+
 type UserProfile = {
   nickname: string
 }
@@ -98,6 +151,8 @@ function App() {
     }
   })
   const [pendingFirstTour, setPendingFirstTour] = useState(false)
+  const [pickIndex, setPickIndex] = useState(0)
+  const [pickFading, setPickFading] = useState(false)
 
   useEffect(() => {
     document.title = '투자 한입 대시보드 · Yahoo Finance'
@@ -177,6 +232,20 @@ function App() {
     window.setTimeout(() => setTourActive(true), 120)
     setPendingFirstTour(false)
   }, [loadingVisible, pendingFirstTour, userProfile])
+
+  useEffect(() => {
+    const interval = setInterval(() => setPickFading(true), 10000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (!pickFading) return
+    const timer = setTimeout(() => {
+      setPickIndex(i => (i + 1) % TODAY_PICKS.length)
+      setPickFading(false)
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [pickFading])
 
   const normalizedSearchQuery = normalizeSearchText(searchQuery)
   const searchMatches = useMemo(() => {
@@ -303,8 +372,11 @@ function App() {
         <div className="sidebar-bottom">
           <div className="sidebar-pick">
             <div className="know-feature-tag">Today's Pick</div>
-            <div className="sidebar-pick-title">복리의 마법: 72의 법칙</div>
-            <div className="sidebar-pick-desc">72를 연 수익률로 나누면 원금이 두 배가 되는 햇수가 나와요.</div>
+            <div className={`sidebar-pick-content ${pickFading ? 'fading' : ''}`}>
+              <div className="sidebar-pick-emoji">{TODAY_PICKS[pickIndex].emoji}</div>
+              <div className="sidebar-pick-title">{TODAY_PICKS[pickIndex].title}</div>
+              <div className="sidebar-pick-desc">{TODAY_PICKS[pickIndex].desc}</div>
+            </div>
           </div>
           <div className="beginner-card">
             <div className="beginner-row">

@@ -259,9 +259,25 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 14px;
+  height: 155px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.sidebar-pick-content {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.sidebar-pick-content.fading {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.sidebar-pick-emoji {
+  font-size: 18px;
+  margin-top: 8px;
 }
 .sidebar-pick-title {
-  margin-top: 8px;
+  margin-top: 4px;
   font-size: 14px;
   font-weight: 800;
   color: var(--accent);
@@ -270,7 +286,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .sidebar-pick-desc {
   margin-top: 6px;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--muted);
 }
 
