@@ -2021,6 +2021,22 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   flex-shrink: 0;
 }
 
+/* Why skeleton */
+@keyframes why-shimmer {
+  0%   { background-position: -320px 0; }
+  100% { background-position: 320px 0; }
+}
+.why-skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+  background-size: 640px 100%;
+  animation: why-shimmer 1.2s infinite linear;
+}
+.app.pro .why-skeleton-line {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+  background-size: 640px 100%;
+}
+
 /* Tour spotlight */
 .tour-overlay {
   position: fixed;
