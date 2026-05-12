@@ -1110,6 +1110,29 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--accent);
   margin-top: 2px;
 }
+.currency-toggle {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.currency-toggle:hover {
+  border-color: var(--point);
+  color: var(--accent);
+}
+.currency-toggle.active {
+  background: var(--point);
+  border-color: var(--point);
+  color: var(--accent);
+}
 .chart-price {
   font-size: 30px;
   font-weight: 800;
@@ -1122,6 +1145,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-weight: 700;
   color: var(--red);
   margin-top: 2px;
+}
+.currency-rate {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .chart-area {
@@ -2256,6 +2285,9 @@ html { scroll-behavior: smooth; }
 .app.pro .chart-tab.active { background: var(--card); color: var(--point); }
 .app.pro .chart-name, .app.pro .chart-price { color: var(--ink); }
 .app.pro .chart-price span { color: var(--muted) !important; }
+.app.pro .currency-toggle { background: #20180c; border-color: var(--line); color: var(--muted); }
+.app.pro .currency-toggle:hover { border-color: var(--point); color: var(--point); }
+.app.pro .currency-toggle.active { background: var(--point); border-color: var(--point); color: #1a1208; }
 .app.pro .chart-stat-value { color: var(--ink); }
 
 .app.pro .news-thumb { background: #20180c; border-color: var(--line); }

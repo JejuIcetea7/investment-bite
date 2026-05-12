@@ -69,6 +69,13 @@ export default function DashboardPage({
     }
   }, [selectedWatchItem, marketData.chart])
 
+  const usdKrwRate = useMemo(() => {
+    const indicator = marketData.indicators.find((item) => item.label === 'USD/KRW')
+    if (!indicator) return null
+    const parsed = Number(indicator.value.replace(/,/g, ''))
+    return Number.isFinite(parsed) ? parsed : null
+  }, [marketData.indicators])
+
   const currentDailyQuiz = dailyQuizzes[dailyQuizIndex] ?? null
   const isDailyQuizComplete = dailyQuizzes.length > 0 && dailyQuizIndex >= dailyQuizzes.length
   const isDailyQuizAnswered = selectedDailyAnswer !== null
@@ -80,6 +87,7 @@ export default function DashboardPage({
       <ChartSection
         displayChart={displayChart}
         marketStatus={marketData.marketStatus}
+        usdKrwRate={usdKrwRate}
         dataSource={dataSource}
         beginner={beginner}
         setHoverHelp={setHoverHelp}

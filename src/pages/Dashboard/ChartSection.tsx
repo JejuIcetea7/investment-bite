@@ -8,12 +8,14 @@ import { edgeFunctionUrl, edgeFunctionHeaders } from '../../lib/supabase'
 export default function ChartSection({
   displayChart,
   marketStatus,
+  usdKrwRate,
   dataSource,
   beginner,
   setHoverHelp,
 }: {
   displayChart: ChartData
   marketStatus: MarketStatus
+  usdKrwRate: number | null
   dataSource: string
   beginner: boolean
   setHoverHelp: Dispatch<SetStateAction<HoverHelp | null>>
@@ -22,6 +24,7 @@ export default function ChartSection({
   const [whyOpen, setWhyOpen] = useState(false)
   const [chartSeries, setChartSeries] = useState<number[] | null>(null)
   const [chartLoading, setChartLoading] = useState(false)
+  const [showKrw, setShowKrw] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -42,6 +45,11 @@ export default function ChartSection({
 
   const displayedSeries = chartSeries ?? displayChart.series
   const isUpForPeriod = displayedSeries.length > 1 && displayedSeries[displayedSeries.length - 1] > displayedSeries[0]
+  const canConvertToKrw = displayChart.currency === 'USD' && usdKrwRate !== null
+
+  useEffect(() => {
+    if (!canConvertToKrw) setShowKrw(false)
+  }, [canConvertToKrw, displayChart.symbol])
 
   // 필터 기간 기준 변화율 계산
   const calculatePeriodChange = () => {
@@ -58,6 +66,13 @@ export default function ChartSection({
   }
 
   const periodChange = calculatePeriodChange()
+  const displayCurrency = showKrw && canConvertToKrw ? 'KRW' : displayChart.currency
+  const priceNumber = parseNumericValue(displayChart.price)
+  const changeNumber = parseNumericValue(periodChange.change)
+  const convertedPrice = showKrw && canConvertToKrw && priceNumber !== null ? priceNumber * usdKrwRate : null
+  const convertedChange = showKrw && canConvertToKrw && changeNumber !== null ? changeNumber * usdKrwRate : null
+  const displayPrice = convertedPrice !== null ? formatKrwValue(convertedPrice) : displayChart.price
+  const displayChange = convertedChange !== null ? formatSignedKrwValue(convertedChange) : periodChange.change
 
   const getPeriodLabel = () => {
     switch (chartTab) {
@@ -99,7 +114,10 @@ export default function ChartSection({
   }
 
   const formatPrice = (price: number) => {
-    return Math.round(price).toLocaleString('ko-KR')
+    if (showKrw && canConvertToKrw) return formatKrwValue(price * usdKrwRate)
+    return displayChart.currency === 'USD'
+      ? price.toLocaleString('en-US', { maximumFractionDigits: 2 })
+      : Math.round(price).toLocaleString('ko-KR')
   }
 
   const handleChartHover = (index: number | null, clientX: number, clientY: number) => {
@@ -162,10 +180,20 @@ export default function ChartSection({
         <div>
           <div className="chart-symbol">{displayChart.symbol} · {displayChart.currency === 'KRW' ? 'KOSPI' : 'NASDAQ'}</div>
           <div className="chart-name">{displayChart.name}</div>
+          {canConvertToKrw && (
+            <button
+              className={`currency-toggle ${showKrw ? 'active' : ''}`}
+              type="button"
+              onClick={() => setShowKrw((value) => !value)}
+            >
+              원화로 보기
+            </button>
+          )}
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div className="chart-price">{displayChart.price} <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{displayChart.currency}</span></div>
-          <div className="chart-delta">{periodChange.change} ({periodChange.percent}) {periodChange.percent.startsWith('-') ? '▼' : '▲'} {getPeriodLabel()}</div>
+          <div className="chart-price">{displayPrice} <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{displayCurrency}</span></div>
+          <div className="chart-delta">{displayChange} ({periodChange.percent}) {periodChange.percent.startsWith('-') ? '▼' : '▲'} {getPeriodLabel()}</div>
+          {showKrw && canConvertToKrw && <div className="currency-rate">환율 {usdKrwRate.toLocaleString('ko-KR')}원 기준</div>}
         </div>
       </div>
       <div className="chart-area" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -189,7 +217,7 @@ export default function ChartSection({
             >
               <div style={{ color: '#666', marginBottom: 4 }}>{hoveredData.date}</div>
               <div style={{ fontWeight: 600, color: isUpForPeriod ? '#dc2626' : '#1d4ed8' }}>
-                ₩{formatPrice(hoveredData.price)}
+                {showKrw && canConvertToKrw ? '₩' : displayChart.currency === 'USD' ? '$' : '₩'}{formatPrice(hoveredData.price)}
               </div>
             </div>
           )}
@@ -239,4 +267,20 @@ export default function ChartSection({
       </div>
     </section>
   )
+}
+
+function parseNumericValue(value: string): number | null {
+  const normalized = value.replace(/[^\d.-]/g, '')
+  if (!normalized) return null
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function formatKrwValue(value: number) {
+  return Math.round(value).toLocaleString('ko-KR')
+}
+
+function formatSignedKrwValue(value: number) {
+  const prefix = value >= 0 ? '+' : '-'
+  return `${prefix}${formatKrwValue(Math.abs(value))}`
 }
