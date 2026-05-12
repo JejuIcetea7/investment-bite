@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import type { ChartData, MarketStatus, HoverHelp } from '../../types'
 import { STAT_HELP } from '../../constants'
@@ -22,9 +22,37 @@ export default function ChartSection({
 }) {
   const [chartTab, setChartTab] = useState<'1D' | '1W' | '1M' | '전체'>('1D')
   const [whyOpen, setWhyOpen] = useState(false)
+  const [whyData, setWhyData] = useState<{ tag: string; title: string; summary: string; bullets: string[] } | null>(null)
+  const [whyLoading, setWhyLoading] = useState(false)
   const [chartSeries, setChartSeries] = useState<number[] | null>(null)
   const [chartLoading, setChartLoading] = useState(false)
   const [showKrw, setShowKrw] = useState(false)
+  const whyCacheSymbol = useRef<string | null>(null)
+
+  const handleWhyClick = async () => {
+    const next = !whyOpen
+    setWhyOpen(next)
+    if (!next) return
+    if (whyCacheSymbol.current === displayChart.symbol && whyData) return
+
+    setWhyLoading(true)
+    try {
+      const url = new URL(edgeFunctionUrl('llm-why'))
+      url.searchParams.set('symbol', displayChart.symbol)
+      url.searchParams.set('name', displayChart.name)
+      url.searchParams.set('percent', displayChart.percent)
+      const res = await fetch(url.toString(), { headers: edgeFunctionHeaders() })
+      const data = await res.json()
+      if (!data.error) {
+        setWhyData(data)
+        whyCacheSymbol.current = displayChart.symbol
+      }
+    } catch {
+      // 실패해도 팝업은 열린 채로 유지
+    } finally {
+      setWhyLoading(false)
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -146,18 +174,41 @@ export default function ChartSection({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <div style={{ position: 'relative' }}>
-              <button className="why-btn" onClick={() => setWhyOpen((v) => !v)}>
+              <button className="why-btn" onClick={handleWhyClick}>
                 <span className="q">?</span> Why?
               </button>
               <div className={`why-pop ${whyOpen ? 'show' : ''}`}>
-                <span className="why-pop-tag">왜 올랐을까?</span>
-                <div className="why-pop-title">{displayChart.name} {displayChart.percent} 상승</div>
-                <div className="why-pop-text">HBM3E 양산 본격화 소식과 외국계 IB의 목표가 상향이 동시에 작용했습니다.</div>
-                <div className="why-pop-list">
-                  <div className="why-pop-li">HBM3E 12단 적층 양산 발표</div>
-                  <div className="why-pop-li">모건스탠리 목표가 95,000원 → 105,000원</div>
-                  <div className="why-pop-li">외국인 5거래일 연속 순매수</div>
-                </div>
+                {whyLoading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div className="why-skeleton-line" style={{ width: 64, height: 18, borderRadius: 99 }} />
+                    <div className="why-skeleton-line" style={{ width: '80%', height: 16 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                      <div className="why-skeleton-line" style={{ width: '100%', height: 13 }} />
+                      <div className="why-skeleton-line" style={{ width: '90%', height: 13 }} />
+                      <div className="why-skeleton-line" style={{ width: '70%', height: 13 }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                      <div className="why-skeleton-line" style={{ width: '95%', height: 12 }} />
+                      <div className="why-skeleton-line" style={{ width: '85%', height: 12 }} />
+                      <div className="why-skeleton-line" style={{ width: '75%', height: 12 }} />
+                    </div>
+                  </div>
+                ) : whyData ? (
+                  <>
+                    <span className="why-pop-tag">{whyData.tag}</span>
+                    <div className="why-pop-title">{whyData.title}</div>
+                    <div className="why-pop-text">{whyData.summary}</div>
+                    {whyData.bullets.length > 0 && (
+                      <div className="why-pop-list">
+                        {whyData.bullets.map((b) => (
+                          <div key={b} className="why-pop-li">{b}</div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: 'var(--muted)' }}>데이터를 불러올 수 없습니다.</div>
+                )}
               </div>
             </div>
             <div className="chart-tabs">

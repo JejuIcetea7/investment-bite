@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { PropensityResult, DashboardWidgetKey } from '../../types'
 import EditableWidgetShell from '../../components/EditableWidgetShell'
 
@@ -19,7 +18,6 @@ export default function PropensitySection({
   onRestartSurvey: () => void
   onToggle: () => void
 }) {
-  const [whyPropOpen, setWhyPropOpen] = useState(false)
   const summaryItems = (analysisLoading
     ? ['설문 결과를 바탕으로 맞춤 해석을 작성하고 있어요.']
     : (propensityResult?.llmSummary || propensityResult?.summary || '').split(/(?<=[.!?。]|요\.|다\.)\s+/)
@@ -35,23 +33,6 @@ export default function PropensitySection({
             <div className="card-num"><span className="card-num-dot">4</span> 유저 투자성향</div>
             <div className="card-title">나의 투자 DNA</div>
             {beginner && <div className="card-sub">간단한 설문과 관심 종목을 바탕으로 보여줘요.</div>}
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
-              <button className="why-btn" onClick={() => setWhyPropOpen((v) => !v)}>
-                <span className="q">?</span> Why?
-              </button>
-              <div className={`why-pop ${whyPropOpen ? 'show' : ''}`}>
-                <span className="why-pop-tag">왜 이 성향일까?</span>
-                <div className="why-pop-title">나의 투자 DNA 분석</div>
-                <div className="why-pop-text">설문 답변을 먼저 5가지 성향으로 분류하고, LLM이 결과 설명을 자연스럽게 정리합니다.</div>
-                <div className="why-pop-list">
-                  <div className="why-pop-li">투자 기간 · 하락 대응 · 성장 선호 반영</div>
-                  <div className="why-pop-li">5개 성향 중 하나로 룰베이스 분류</div>
-                  <div className="why-pop-li">LLM 분석 실패 시 기본 해석으로 표시</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
         {propensityResult ? (
