@@ -4,7 +4,7 @@ import { edgeFunctionUrl, edgeFunctionHeaders } from './lib/supabase'
 import type { MarketData, DailyQuiz, DailyQuizData, KnowledgeCard, NewsData, NewsArticle, WatchItem, PropensityResult, DashboardWidgetKey } from './types'
 import { DASHBOARD_WIDGETS, TOUR_STEPS, STOCK_ALIASES } from './constants'
 import defaultMarketData from './data/defaultMarketData'
-import { normalizeSearchText, createPropensityResult } from './utils'
+import { normalizeSearchText, createPropensityResult, createPropensitySurveyPayload } from './utils'
 import SectionHelpTooltip from './components/SectionHelpTooltip'
 import TourOverlay from './components/TourOverlay'
 import SurveyModal from './components/SurveyModal'
@@ -21,12 +21,15 @@ type UserProfile = {
 
 const USER_PROFILE_KEY = 'investment-bite-user-profile'
 const PROPENSITY_RESULT_KEY = 'investment-bite-propensity-result'
+const PROPENSITY_ANALYSIS_CACHE_KEY = 'investment-bite-propensity-analysis-cache'
 
 type SavedPropensityResult = {
   answers: number[]
   result: PropensityResult
   completedAt: string
 }
+
+type CachedPropensityAnalysis = Pick<PropensityResult, 'llmSummary' | 'strengths' | 'cautions' | 'recommendation'>
 
 const getAvatarInitial = (nickname: string) => {
   const normalized = nickname.trim()
@@ -39,12 +42,41 @@ const readSavedPropensityResult = (): PropensityResult | null => {
     const raw = window.localStorage.getItem(PROPENSITY_RESULT_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as Partial<SavedPropensityResult>
+    if (Array.isArray(parsed.answers) && (!parsed.result?.characterImage || !parsed.result?.analysisSource)) {
+      return createPropensityResult(parsed.answers)
+    }
     return parsed.result && typeof parsed.result.title === 'string' && typeof parsed.result.score === 'number'
       ? parsed.result
       : null
   } catch {
     return null
   }
+}
+
+const getPropensityAnalysisCacheKey = (answers: number[], result: PropensityResult) => {
+  return `${answers.join('-')}::${result.title}::${result.score}`
+}
+
+const readCachedPropensityAnalysis = (cacheKey: string): CachedPropensityAnalysis | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(PROPENSITY_ANALYSIS_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Record<string, CachedPropensityAnalysis>
+    return parsed[cacheKey] ?? null
+  } catch {
+    return null
+  }
+}
+
+const writeCachedPropensityAnalysis = (cacheKey: string, analysis: CachedPropensityAnalysis) => {
+  if (typeof window === 'undefined') return
+  try {
+    const raw = window.localStorage.getItem(PROPENSITY_ANALYSIS_CACHE_KEY)
+    const parsed = raw ? JSON.parse(raw) as Record<string, CachedPropensityAnalysis> : {}
+    parsed[cacheKey] = analysis
+    window.localStorage.setItem(PROPENSITY_ANALYSIS_CACHE_KEY, JSON.stringify(parsed))
+  } catch { /* ignore */ }
 }
 
 function App() {
@@ -62,6 +94,7 @@ function App() {
   const [propensityStep, setPropensityStep] = useState(0)
   const [propensityAnswers, setPropensityAnswers] = useState<number[]>([])
   const [propensityResult, setPropensityResult] = useState<PropensityResult | null>(() => readSavedPropensityResult())
+  const [propensityAnalysisLoading, setPropensityAnalysisLoading] = useState(false)
   const [hoverHelp, setHoverHelp] = useState<{ title: string; text: string; x: number; y: number } | null>(null)
   const [selectedWatchItem, setSelectedWatchItem] = useState<WatchItem | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -201,20 +234,83 @@ function App() {
     setPropensityAnswers((current) => { const next = [...current]; next[propensityStep] = index; return next })
   }
 
+  const requestPropensityAnalysis = async (answers: number[], ruleResult: PropensityResult) => {
+    const cacheKey = getPropensityAnalysisCacheKey(answers, ruleResult)
+    const cachedAnalysis = readCachedPropensityAnalysis(cacheKey)
+    if (cachedAnalysis) {
+      const cachedResult: PropensityResult = {
+        ...ruleResult,
+        llmSummary: cachedAnalysis.llmSummary || ruleResult.summary,
+        strengths: cachedAnalysis.strengths?.length ? cachedAnalysis.strengths : ruleResult.strengths,
+        cautions: cachedAnalysis.cautions?.length ? cachedAnalysis.cautions : ruleResult.cautions,
+        recommendation: cachedAnalysis.recommendation || ruleResult.recommendation,
+        analysisSource: 'llm',
+      }
+      setPropensityResult(cachedResult)
+      try {
+        window.localStorage.setItem(PROPENSITY_RESULT_KEY, JSON.stringify({
+          answers,
+          result: cachedResult,
+          completedAt: new Date().toISOString(),
+        }))
+      } catch { /* ignore */ }
+      return
+    }
+
+    setPropensityAnalysisLoading(true)
+    try {
+      const response = await fetch(edgeFunctionUrl('analyze-propensity'), {
+        method: 'POST',
+        headers: { ...edgeFunctionHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(createPropensitySurveyPayload(answers, ruleResult)),
+      })
+      if (!response.ok) throw new Error(`analyze-propensity ${response.status}`)
+      const analysis = await response.json() as Pick<PropensityResult, 'llmSummary' | 'strengths' | 'cautions' | 'recommendation'>
+      const enhancedResult: PropensityResult = {
+        ...ruleResult,
+        llmSummary: analysis.llmSummary || ruleResult.summary,
+        strengths: analysis.strengths?.length ? analysis.strengths : ruleResult.strengths,
+        cautions: analysis.cautions?.length ? analysis.cautions : ruleResult.cautions,
+        recommendation: analysis.recommendation || ruleResult.recommendation,
+        analysisSource: 'llm',
+      }
+      writeCachedPropensityAnalysis(cacheKey, {
+        llmSummary: enhancedResult.llmSummary,
+        strengths: enhancedResult.strengths,
+        cautions: enhancedResult.cautions,
+        recommendation: enhancedResult.recommendation,
+      })
+      setPropensityResult(enhancedResult)
+      try {
+        window.localStorage.setItem(PROPENSITY_RESULT_KEY, JSON.stringify({
+          answers,
+          result: enhancedResult,
+          completedAt: new Date().toISOString(),
+        }))
+      } catch { /* ignore */ }
+    } catch {
+      setPropensityResult((current) => current ? { ...current, analysisSource: 'rule' } : ruleResult)
+    } finally {
+      setPropensityAnalysisLoading(false)
+    }
+  }
+
   const nextPropensityStep = () => {
     if (propensityStep < propensityAnswers.length - 1) { setPropensityStep((s) => s + 1); return }
     const isLast = propensityStep === 3
     if (!isLast) { setPropensityStep((s) => s + 1); return }
-    const result = createPropensityResult(propensityAnswers)
+    const completedAnswers = [...propensityAnswers]
+    const result = createPropensityResult(completedAnswers)
     setPropensityResult(result)
     try {
       window.localStorage.setItem(PROPENSITY_RESULT_KEY, JSON.stringify({
-        answers: propensityAnswers,
+        answers: completedAnswers,
         result,
         completedAt: new Date().toISOString(),
       }))
     } catch { /* ignore */ }
     setPropensityOpen(false)
+    void requestPropensityAnalysis(completedAnswers, result)
   }
 
   const toggleDashboardWidget = (key: DashboardWidgetKey) => {
@@ -386,6 +482,7 @@ function App() {
               beginner={beginner}
               selectedWatchItem={selectedWatchItem}
               propensityResult={propensityResult}
+              analysisLoading={propensityAnalysisLoading}
               hiddenWidgets={hiddenWidgets}
               dashboardEditMode={dashboardEditMode}
               knowledgeCards={knowledgeCards}
@@ -396,7 +493,7 @@ function App() {
               setHoverHelp={setHoverHelp}
               setSelectedWatchItem={setSelectedWatchItem}
               onNavigateToNews={() => setActive('news')}
-              onStartAnalysis={openPropensity}
+              onRestartSurvey={openPropensity}
               onToggleWidget={toggleDashboardWidget}
               onRefreshKnowledge={refreshKnowledgeCards}
               onPickQuizAnswer={pickDailyQuizAnswer}

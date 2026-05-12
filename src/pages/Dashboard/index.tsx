@@ -13,6 +13,7 @@ export default function DashboardPage({
   beginner,
   selectedWatchItem,
   propensityResult,
+  analysisLoading,
   hiddenWidgets,
   dashboardEditMode,
   knowledgeCards,
@@ -23,7 +24,7 @@ export default function DashboardPage({
   setHoverHelp,
   setSelectedWatchItem,
   onNavigateToNews,
-  onStartAnalysis,
+  onRestartSurvey,
   onToggleWidget,
   onRefreshKnowledge,
   onPickQuizAnswer,
@@ -35,6 +36,7 @@ export default function DashboardPage({
   beginner: boolean
   selectedWatchItem: WatchItem | null
   propensityResult: PropensityResult | null
+  analysisLoading: boolean
   hiddenWidgets: DashboardWidgetKey[]
   dashboardEditMode: boolean
   knowledgeCards: KnowledgeCard[]
@@ -45,7 +47,7 @@ export default function DashboardPage({
   setHoverHelp: Dispatch<SetStateAction<HoverHelp | null>>
   setSelectedWatchItem: (item: WatchItem | null) => void
   onNavigateToNews: () => void
-  onStartAnalysis: () => void
+  onRestartSurvey: () => void
   onToggleWidget: (key: DashboardWidgetKey) => void
   onRefreshKnowledge: () => void
   onPickQuizAnswer: (index: number) => void
@@ -94,10 +96,11 @@ export default function DashboardPage({
       />
       <PropensitySection
         propensityResult={propensityResult}
+        analysisLoading={analysisLoading}
         beginner={beginner}
         hiddenWidgets={hiddenWidgets}
         editMode={dashboardEditMode}
-        onStartAnalysis={onStartAnalysis}
+        onRestartSurvey={onRestartSurvey}
         onToggle={() => onToggleWidget('propensity')}
       />
       <KnowledgeSection
