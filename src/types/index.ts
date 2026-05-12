@@ -120,7 +120,7 @@ export type PropensityResult = {
   traits: Array<{ label: string; val: number; point: boolean }>
 }
 
-export type DashboardWidgetKey = 'watch' | 'propensity' | 'know' | 'quiz'
+export type DashboardWidgetKey = 'news' | 'propensity' | 'know' | 'quiz'
 
 export type TourStep = {
   sel: string

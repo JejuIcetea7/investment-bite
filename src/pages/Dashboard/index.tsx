@@ -9,7 +9,6 @@ import QuizSection from './QuizSection'
 
 export default function DashboardPage({
   marketData,
-  dataSource,
   beginner,
   selectedWatchItem,
   propensityResult,
@@ -32,7 +31,6 @@ export default function DashboardPage({
   onRestartQuiz,
 }: {
   marketData: MarketData
-  dataSource: string
   beginner: boolean
   selectedWatchItem: WatchItem | null
   propensityResult: PropensityResult | null
@@ -83,16 +81,13 @@ export default function DashboardPage({
   const dailyQuizProgress = dailyQuizzes.length > 0 ? (dailyQuizSolvedCount / dailyQuizzes.length) * 100 : 0
   const dashboardWidgets = [
     {
-      key: 'watch' as const,
+      key: 'news' as const,
       node: (
-        <WatchlistSection
-          watchlist={marketData.watchlist}
-          selectedWatchItem={selectedWatchItem}
-          beginner={beginner}
+        <NewsSummarySection
           hiddenWidgets={hiddenWidgets}
           editMode={dashboardEditMode}
-          onSelect={setSelectedWatchItem}
-          onToggle={() => onToggleWidget('watch')}
+          onNavigateToNews={onNavigateToNews}
+          onToggle={() => onToggleWidget('news')}
         />
       ),
     },
@@ -156,11 +151,15 @@ export default function DashboardPage({
         displayChart={displayChart}
         marketStatus={marketData.marketStatus}
         usdKrwRate={usdKrwRate}
-        dataSource={dataSource}
         beginner={beginner}
         setHoverHelp={setHoverHelp}
       />
-      <NewsSummarySection onNavigateToNews={onNavigateToNews} />
+      <WatchlistSection
+        watchlist={marketData.watchlist}
+        selectedWatchItem={selectedWatchItem}
+        beginner={beginner}
+        onSelect={setSelectedWatchItem}
+      />
       <div className="dashboard-widget-columns">
         {visibleDashboardWidgets.map((widget) => (
           <div key={widget.key} className="dashboard-widget-slot">

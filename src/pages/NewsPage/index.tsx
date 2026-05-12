@@ -18,7 +18,7 @@ export default function NewsPage({
 
   return (
     <div className="news-page">
-      <section className="news-section card">
+      <section className="news-section card" data-tour="news-top">
         <div className="card-head">
           <div className="card-head-left">
             <div className="card-num"><span className="card-num-dot">1</span> 주요 뉴스</div>
@@ -41,7 +41,7 @@ export default function NewsPage({
             <div className="card-sub">섹터를 선택해 관련 뉴스를 확인하세요.</div>
           </div>
         </div>
-        <div className="sector-tabs">
+        <div className="sector-tabs" data-tour="news-sector-tabs">
           {NEWS_SECTORS.map(sector => (
             <button
               key={sector}
@@ -52,7 +52,7 @@ export default function NewsPage({
             </button>
           ))}
         </div>
-        <div className="news-cards-list" style={{ marginTop: 16 }}>
+        <div className="news-cards-list" style={{ marginTop: 16 }} data-tour="news-sector-list">
           {sectorArticles.map((article, i) => (
             <NewsCard key={i} article={article} onClick={() => onCardClick(article)} />
           ))}

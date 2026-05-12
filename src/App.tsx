@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { edgeFunctionUrl, edgeFunctionHeaders, hasSupabaseConfig } from './lib/supabase'
 import type { MarketData, DailyQuiz, DailyQuizData, KnowledgeCard, NewsData, NewsArticle, WatchItem, PropensityResult, DashboardWidgetKey, SectorStock, PriceAlert, PriceAlertDirection } from './types'
-import { DASHBOARD_WIDGETS, TOUR_STEPS, STOCK_ALIASES } from './constants'
+import { DASHBOARD_WIDGETS, TOUR_STEPS_BY_PAGE, STOCK_ALIASES } from './constants'
 import defaultMarketData from './data/defaultMarketData'
 import { normalizeSearchText, createPropensityResult, createPropensitySurveyPayload } from './utils'
 import SectionHelpTooltip from './components/SectionHelpTooltip'
@@ -200,7 +200,6 @@ function App() {
   const [beginner, setBeginner] = useState(true)
   const [active, setActive] = useState('home')
   const [marketData, setMarketData] = useState<MarketData>(defaultMarketData)
-  const [dataSource, setDataSource] = useState<'Yahoo Finance' | '기본 데이터'>('기본 데이터')
   const [dailyQuizzes, setDailyQuizzes] = useState<DailyQuiz[]>([])
   const [dailyQuizIndex, setDailyQuizIndex] = useState(0)
   const [selectedDailyAnswer, setSelectedDailyAnswer] = useState<number | null>(null)
@@ -263,13 +262,13 @@ function App() {
 
     marketRequest
       .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<MarketData> })
-      .then((payload) => { if (!ignore) { setMarketData(payload); setDataSource('Yahoo Finance') } })
+      .then((payload) => { if (!ignore) setMarketData(payload) })
       .catch(() => {
         // Edge Function 실패 시 정적 파일 fallback
         fetch('/data/market-data.json', { cache: 'no-store' })
           .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<MarketData> })
-          .then((payload) => { if (!ignore) { setMarketData(payload); setDataSource('Yahoo Finance') } })
-          .catch(() => { if (!ignore) setDataSource('기본 데이터') })
+          .then((payload) => { if (!ignore) setMarketData(payload) })
+          .catch(() => {})
       })
       .finally(() => { if (!ignore) setTimeout(() => setLoadingVisible(false), 350) })
     return () => { ignore = true }
@@ -388,8 +387,11 @@ function App() {
   const showSearchSuggestions = searchFocused && normalizedSearchQuery.length >= 2
 
   const visibleTourSteps = useMemo(
-    () => TOUR_STEPS.filter((step) => !step.widgetKey || !hiddenWidgets.includes(step.widgetKey)),
-    [hiddenWidgets],
+    () => {
+      const pageSteps = TOUR_STEPS_BY_PAGE[active as keyof typeof TOUR_STEPS_BY_PAGE] ?? TOUR_STEPS_BY_PAGE.home
+      return pageSteps.filter((step) => !step.widgetKey || !hiddenWidgets.includes(step.widgetKey))
+    },
+    [active, hiddenWidgets],
   )
   const safeTourStep = Math.min(tourStep, visibleTourSteps.length - 1)
 
@@ -618,7 +620,7 @@ function App() {
               </button>
             </>
           )}
-          <button className="nav-item" onClick={() => { setActive('home'); setTourStep(0); setTourActive(true) }} data-tour="tour-btn">
+          <button className="nav-item" onClick={() => { setTourStep(0); setTourActive(true) }} data-tour="tour-btn">
             <span className="nav-icon">🍙</span><span>가이드 투어</span>
           </button>
         </nav>
@@ -747,7 +749,6 @@ function App() {
           {active !== 'news' && !isWholeView && (
             <DashboardPage
               marketData={dashboardMarketData}
-              dataSource={dataSource}
               beginner={beginner}
               selectedWatchItem={selectedWatchItem}
               propensityResult={propensityResult}

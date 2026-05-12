@@ -3,10 +3,10 @@ import type { DashboardWidgetKey, PropensityQuestion, TourStep } from '../types'
 export const IND_PER_PAGE = 6
 export const IND_INTERVAL_MS = 20000
 
-export const DASHBOARD_WIDGETS: DashboardWidgetKey[] = ['watch', 'propensity', 'know', 'quiz']
+export const DASHBOARD_WIDGETS: DashboardWidgetKey[] = ['news', 'propensity', 'know', 'quiz']
 
 export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
-  watch: '관심 종목',
+  news: '주요 뉴스',
   propensity: '유저 투자성향',
   know: '투자 상식 카드',
   quiz: '투자 기초 퀴즈',
@@ -117,43 +117,7 @@ export const PROPENSITY_QUESTIONS: PropensityQuestion[] = [
   },
 ]
 
-export const TOUR_STEPS: TourStep[] = [
-  {
-    sel: '[data-tour="menu-dashboard"]',
-    title: '대시보드',
-    text: '시장 요약, 차트, 관심 종목처럼 오늘 확인할 정보를 한 화면에서 볼 수 있어요.',
-    pos: 'right',
-  },
-  {
-    sel: '[data-tour="menu-whole"]',
-    title: '전체 종목',
-    text: '등록된 종목을 넓게 둘러보고 원하는 종목을 빠르게 찾아볼 수 있는 메뉴예요.',
-    pos: 'right',
-  },
-  {
-    sel: '[data-tour="menu-news"]',
-    title: '뉴스 & 리포트',
-    text: '시장 뉴스와 리포트를 모아 확인하고 투자 판단에 필요한 흐름을 살펴볼 수 있어요.',
-    pos: 'right',
-  },
-  {
-    sel: '[data-tour="tool-dashboard-edit"]',
-    title: '대시보드 편집',
-    text: '대시보드 카드 구성을 내 관심사에 맞게 켜고 끌 수 있어요.',
-    pos: 'right',
-  },
-  {
-    sel: '[data-tour="tool-propensity"]',
-    title: '투자 성향 분석',
-    text: '짧은 설문으로 나에게 맞는 투자 성향과 참고 포인트를 확인할 수 있어요.',
-    pos: 'right',
-  },
-  {
-    sel: '[data-tour="tour-btn"]',
-    title: '가이드 투어',
-    text: '이 버튼으로 언제든 주요 화면과 기능 설명을 다시 볼 수 있어요.',
-    pos: 'right',
-  },
+export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     sel: '[data-tour="market-summary"]',
     title: '시장 요약',
@@ -171,13 +135,13 @@ export const TOUR_STEPS: TourStep[] = [
     title: '시장 핵심 뉴스',
     text: '오늘 시장에 영향을 주는 뉴스만 모아 보여줍니다.',
     pos: 'left',
+    widgetKey: 'news',
   },
   {
     sel: '[data-tour="watch"]',
     title: '관심 종목',
     text: '내가 보는 종목의 가격과 추세를 빠르게 확인하세요.',
     pos: 'left',
-    widgetKey: 'watch',
   },
   {
     sel: '[data-tour="propensity"]',
@@ -207,6 +171,60 @@ export const TOUR_STEPS: TourStep[] = [
     pos: 'right',
   },
 ]
+
+export const WHOLE_TOUR_STEPS: TourStep[] = [
+  {
+    sel: '[data-tour="whole-sector-tabs"]',
+    title: '섹터 필터',
+    text: 'AI, 반도체, 조선처럼 보고 싶은 섹터만 골라 종목을 좁혀볼 수 있어요.',
+    pos: 'bottom',
+  },
+  {
+    sel: '[data-tour="whole-stock-summary"]',
+    title: '한 줄 평가',
+    text: '초보자도 흐름을 이해하기 쉽도록 종목별 상태를 짧은 문장으로 풀어 보여줘요.',
+    pos: 'bottom',
+  },
+  {
+    sel: '[data-tour="whole-watch-toggle"]',
+    title: '관심 리스트 추가',
+    text: '하트를 누르면 해당 종목이 대시보드 관심 종목 리스트에 저장돼요.',
+    pos: 'left',
+  },
+  {
+    sel: '[data-tour="whole-alert-button"]',
+    title: '목표금액 알림',
+    text: '원하는 가격 조건을 등록하면 목표가에 도달했을 때 상단 알림창에서 확인할 수 있어요.',
+    pos: 'left',
+  },
+]
+
+export const NEWS_TOUR_STEPS: TourStep[] = [
+  {
+    sel: '[data-tour="news-top"]',
+    title: '주요 뉴스',
+    text: '오늘 시장에 영향을 줄 수 있는 핵심 뉴스를 먼저 모아 보여줘요.',
+    pos: 'bottom',
+  },
+  {
+    sel: '[data-tour="news-sector-tabs"]',
+    title: '섹터별 필터',
+    text: '관심 있는 섹터를 선택해 관련 뉴스만 빠르게 확인할 수 있어요.',
+    pos: 'bottom',
+  },
+  {
+    sel: '[data-tour="news-sector-list"]',
+    title: '섹터 뉴스 목록',
+    text: '선택한 섹터의 기사 요약, 키워드, 시장 영향을 카드로 살펴볼 수 있어요.',
+    pos: 'top',
+  },
+]
+
+export const TOUR_STEPS_BY_PAGE = {
+  home: DASHBOARD_TOUR_STEPS,
+  whole: WHOLE_TOUR_STEPS,
+  news: NEWS_TOUR_STEPS,
+} as const
 
 export const DASHBOARD_NEWS_ITEMS = [
   { tag: '시장', title: '코스피, 외국인 매수에 2,720선 회복… 반도체 강세 지속', meta: '한국경제 · 12분 전' },
