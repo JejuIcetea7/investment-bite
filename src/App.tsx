@@ -170,8 +170,8 @@ const readSavedPropensityResult = (): PropensityResult | null => {
   }
 }
 
-const getPropensityAnalysisCacheKey = (answers: number[], result: PropensityResult) => {
-  return `${answers.join('-')}::${result.title}::${result.score}`
+const getPropensityAnalysisCacheKey = (answers: number[], result: PropensityResult, watchlistSymbols: string[]) => {
+  return `${answers.join('-')}::${result.title}::${result.score}::${watchlistSymbols.slice().sort().join(',')}`
 }
 
 const readCachedPropensityAnalysis = (cacheKey: string): CachedPropensityAnalysis | null => {
@@ -402,8 +402,9 @@ function App() {
     setPropensityAnswers((current) => { const next = [...current]; next[propensityStep] = index; return next })
   }
 
-  const requestPropensityAnalysis = async (answers: number[], ruleResult: PropensityResult) => {
-    const cacheKey = getPropensityAnalysisCacheKey(answers, ruleResult)
+  const requestPropensityAnalysis = async (answers: number[], ruleResult: PropensityResult, watchlist: WatchItem[]) => {
+    const watchlistSymbols = watchlist.map((w) => w.symbol)
+    const cacheKey = getPropensityAnalysisCacheKey(answers, ruleResult, watchlistSymbols)
     const cachedAnalysis = readCachedPropensityAnalysis(cacheKey)
     if (cachedAnalysis) {
       const cachedResult: PropensityResult = {
@@ -431,7 +432,7 @@ function App() {
       const response = await fetch(edgeFunctionUrl('analyze-propensity'), {
         method: 'POST',
         headers: { ...edgeFunctionHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(createPropensitySurveyPayload(answers, ruleResult)),
+        body: JSON.stringify(createPropensitySurveyPayload(answers, ruleResult, watchlist)),
       })
       if (!response.ok) throw new Error(`analyze-propensity ${response.status}`)
       const analysis = await response.json() as Pick<PropensityResult, 'llmSummary' | 'strengths' | 'cautions' | 'recommendation'>
@@ -479,7 +480,7 @@ function App() {
       }))
     } catch { /* ignore */ }
     setPropensityOpen(false)
-    void requestPropensityAnalysis(completedAnswers, result)
+    void requestPropensityAnalysis(completedAnswers, result, customWatchlist)
   }
 
   const toggleDashboardWidget = (key: DashboardWidgetKey) => {

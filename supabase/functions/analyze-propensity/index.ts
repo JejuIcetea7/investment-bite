@@ -11,6 +11,13 @@ type SurveyAnswer = {
   answerIndex: number
 }
 
+type WatchlistItem = {
+  name: string
+  symbol: string
+  chg: string
+  up: boolean
+}
+
 type PropensityPayload = {
   result: {
     title: string
@@ -20,6 +27,7 @@ type PropensityPayload = {
     note: string
   }
   answers: SurveyAnswer[]
+  watchlist: WatchlistItem[]
 }
 
 function fallback(payload: PropensityPayload) {
@@ -58,9 +66,15 @@ serve(async (req) => {
       .map((item, index) => `${index + 1}. ${item.question}\n- 선택: ${item.answer}`)
       .join('\n\n')
 
+    const watchlistText = payload.watchlist && payload.watchlist.length > 0
+      ? payload.watchlist
+          .map((w) => `${w.name}(${w.symbol}) ${w.up ? '▲' : '▼'}${w.chg}`)
+          .join(' / ')
+      : '없음'
+
     const prompt = `너는 초보 투자자를 돕는 투자 성향 분석 도우미다.
 투자 조언은 참고용으로만 표현하고, 특정 종목 매수/매도 지시는 하지 않는다.
-아래 설문 결과를 바탕으로 사용자의 투자 성향을 쉬운 한국어로 설명하라.
+아래 설문 결과와 관심 종목을 함께 고려해 사용자의 투자 성향을 쉬운 한국어로 설명하라.
 
 룰베이스 분류:
 - 성향명: ${payload.result.title}
@@ -72,8 +86,18 @@ serve(async (req) => {
 설문 답변:
 ${answerText}
 
+관심 종목 (${payload.watchlist?.length ?? 0}개):
+${watchlistText}
+
+분석 지침 (관심 종목 활용):
+- 관심 종목의 업종/성격(성장주, 방어주, 테마 등)이 설문 성향과 일치하는지 확인한다.
+- 불일치가 있다면(예: 안정형인데 고변동 테마주 관심) cautions에 구체적으로 언급한다.
+- 일치한다면 strengths에 "이미 본인 성향에 맞는 종목에 관심을 두고 있다"는 식으로 반영한다.
+- recommendation은 관심 종목 흐름(현재 등락 방향)을 고려해 실질적인 조언을 담는다.
+- 관심 종목이 없으면 설문 답변만으로 분석한다.
+
 작성 규칙:
-- 같은 설문 답변 조합에는 항상 같은 분석이 나오도록 임의 표현을 줄이고, 제공된 답변 근거만 사용한다.
+- 같은 설문 답변 + 관심 종목 조합에는 항상 같은 분석이 나오도록 임의 표현을 줄인다.
 - llmSummary는 2~3개의 짧은 문장으로 작성한다. 화면에서는 불렛으로 표시된다.
 - strengths, cautions, recommendation은 각각 줄글로 읽혔을 때 약 2줄 분량이 되도록 2문장으로 작성한다.
 - strengths와 cautions는 배열이지만 각 배열에는 긴 문장 1개만 넣는다.

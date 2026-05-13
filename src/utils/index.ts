@@ -1,4 +1,4 @@
-import type { PropensityResult } from '../types'
+import type { PropensityResult, WatchItem } from '../types'
 import { PROPENSITY_QUESTIONS } from '../constants'
 
 export function normalizeSearchText(value: string) {
@@ -89,7 +89,7 @@ export function createPropensityResult(answers: number[]): PropensityResult {
   }
 }
 
-export function createPropensitySurveyPayload(answers: number[], result: PropensityResult) {
+export function createPropensitySurveyPayload(answers: number[], result: PropensityResult, watchlist: WatchItem[]) {
   return {
     result: {
       title: result.title,
@@ -102,6 +102,12 @@ export function createPropensitySurveyPayload(answers: number[], result: Propens
       question: question.q,
       answer: question.opts[answers[index]] ?? '',
       answerIndex: answers[index],
+    })),
+    watchlist: watchlist.map((w) => ({
+      name: w.name,
+      symbol: w.symbol,
+      chg: w.chg,
+      up: w.up,
     })),
   }
 }
