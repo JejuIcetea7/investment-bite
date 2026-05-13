@@ -2305,6 +2305,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   line-height: 1.6;
   word-break: keep-all;
 }
+.stock-quiz-card .quiz-next-btn {
+  margin-top: 12px;
+}
+.stock-quiz-empty {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}
 .quiz-next-btn {
   width: 100%;
   justify-content: center;
