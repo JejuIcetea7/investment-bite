@@ -24,6 +24,8 @@ export default function ChartSection({
   const [whyData, setWhyData] = useState<{ tag: string; title: string; summary: string; bullets: string[] } | null>(null)
   const [whyLoading, setWhyLoading] = useState(false)
   const [chartSeries, setChartSeries] = useState<number[] | null>(null)
+  const [chartLabels, setChartLabels] = useState<string[] | null>(null)
+  const [chartSessionLabel, setChartSessionLabel] = useState<string | null>(null)
   const [chartStats, setChartStats] = useState<MarketStat[] | null>(null)
   const [chartLoading, setChartLoading] = useState(false)
   const [showKrw, setShowKrw] = useState(false)
@@ -68,22 +70,28 @@ export default function ChartSection({
     const controller = new AbortController()
     if (!hasSupabaseConfig) {
       setChartSeries(null)
+      setChartLabels(null)
+      setChartSessionLabel(null)
       setChartLoading(false)
       return () => controller.abort()
     }
 
     setChartLoading(true)
     setChartStats(null)
-    const url = new URL(edgeFunctionUrl('get-chart'))
+    setChartLabels(null)
+    setChartSessionLabel(null)
+    const url = new URL(edgeFunctionUrl('get-chart-v2'))
     url.searchParams.set('symbol', displayChart.symbol)
     url.searchParams.set('period', chartTab)
     fetch(url.toString(), {
       headers: edgeFunctionHeaders(),
       signal: controller.signal,
     })
-      .then((r) => r.json() as Promise<{ series?: number[]; stats?: MarketStat[] }>)
+      .then((r) => r.json() as Promise<{ series?: number[]; labels?: string[]; stats?: MarketStat[]; sessionLabel?: string }>)
       .then((data) => {
         if (data.series && data.series.length > 0) setChartSeries(data.series)
+        if (data.labels && data.labels.length > 0) setChartLabels(data.labels)
+        setChartSessionLabel(data.sessionLabel ?? null)
         if (data.stats && data.stats.length > 0) setChartStats(data.stats)
       })
       .catch(() => {})
@@ -92,6 +100,7 @@ export default function ChartSection({
   }, [chartTab, displayChart.symbol])
 
   const displayedSeries = chartSeries ?? displayChart.series
+  const displayedLabels = chartLabels ?? []
   const displayedStats = chartStats ?? displayChart.stats
   const isUpForPeriod = displayedSeries.length > 1 && displayedSeries[displayedSeries.length - 1] > displayedSeries[0]
   const canConvertToKrw = displayChart.currency === 'USD' && usdKrwRate !== null
@@ -142,6 +151,7 @@ export default function ChartSection({
   const [hoveredData, setHoveredData] = useState<{ index: number; price: number; date: string; xRatio: number; yRatio: number } | null>(null)
 
   const generateDateLabel = (index: number) => {
+    if (displayedLabels[index]) return displayedLabels[index]
     const now = new Date()
     let date: Date
 
@@ -272,6 +282,7 @@ export default function ChartSection({
           {showKrw && canConvertToKrw && <div className="currency-rate">환율 {usdKrwRate.toLocaleString('ko-KR')}원 기준</div>}
         </div>
       </div>
+      {chartSessionLabel && <div className="chart-session-label">{chartSessionLabel}</div>}
       <div className="chart-area" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 0 }}>
         <div style={{ position: 'relative', flex: 1, minHeight: 200 }}>
           <ChartArea data={displayedSeries} isUp={isUpForPeriod} onHover={handleChartHover} />

@@ -85,6 +85,10 @@ type SavedPropensityResult = {
 }
 
 type CachedPropensityAnalysis = Pick<PropensityResult, 'llmSummary' | 'strengths' | 'cautions' | 'recommendation'>
+type SearchAlertDraft = {
+  price: string
+  direction: PriceAlertDirection
+}
 
 const parsePriceValue = (price: string) => {
   const normalized = price.replace(/[$,원\s]/g, '')
@@ -104,6 +108,11 @@ const createWatchItemFromSectorStock = (stock: SectorStock): WatchItem => {
     up: stock.up,
     series: Array.from({ length: 8 }, (_, index) => 10 + direction * index * (magnitude / 7)),
   }
+}
+
+const formatTriggeredPrice = (price: number, currency: string) => {
+  if (currency === 'KRW') return Math.round(price).toLocaleString('ko-KR')
+  return price.toLocaleString('en-US', { maximumFractionDigits: 2 })
 }
 
 const readStoredWatchlist = (): WatchItem[] | null => {
@@ -219,6 +228,10 @@ function App() {
   const [sectorStocks, setSectorStocks] = useState<SectorStock[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
+  const [yahooSearchResults, setYahooSearchResults] = useState<SectorStock[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchAlertSymbol, setSearchAlertSymbol] = useState<string | null>(null)
+  const [searchAlertDrafts, setSearchAlertDrafts] = useState<Record<string, SearchAlertDraft>>({})
   const [dashboardEditMode, setDashboardEditMode] = useState(false)
   const [hiddenWidgets, setHiddenWidgets] = useState<DashboardWidgetKey[]>(() => {
     if (typeof window === 'undefined') return []
@@ -357,6 +370,33 @@ function App() {
   }, [hiddenWidgets])
 
   useEffect(() => {
+    const query = searchQuery.trim()
+    if (!hasSupabaseConfig || query.length < 2) {
+      setYahooSearchResults([])
+      setSearchLoading(false)
+      return
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      setSearchLoading(true)
+      const url = new URL(edgeFunctionUrl('search-stocks'))
+      url.searchParams.set('q', query)
+      fetch(url.toString(), {
+        headers: edgeFunctionHeaders(),
+        signal: controller.signal,
+      })
+        .then((response) => response.json() as Promise<{ stocks?: SectorStock[] }>)
+        .then((data) => setYahooSearchResults(data.stocks ?? []))
+        .catch(() => setYahooSearchResults([]))
+        .finally(() => setSearchLoading(false))
+    }, 260)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
     if (!pendingFirstTour || loadingVisible || !userProfile) return
     setActive('home')
     setTourStep(0)
@@ -412,8 +452,24 @@ function App() {
         up: stock.up,
         series: [] as number[],
       }))
-    return [...watchlistMatches, ...sectorMatches]
-  }, [customWatchlist, sectorStocks, normalizedSearchQuery])
+    const knownSymbolSet = new Set([...watchlistMatches, ...sectorMatches].map((stock) => stock.symbol))
+    const remoteMatches = yahooSearchResults
+      .filter((stock) => !knownSymbolSet.has(stock.symbol))
+      .map((stock) => ({
+        name: stock.name,
+        symbol: stock.symbol,
+        price: stock.price,
+        chg: stock.changePercent,
+        up: stock.up,
+        series: [] as number[],
+        sourceStock: stock,
+      }))
+    return [
+      ...watchlistMatches.map((stock) => ({ ...stock, sourceStock: sectorStocks.find((item) => item.symbol === stock.symbol) })),
+      ...sectorMatches.map((stock) => ({ ...stock, sourceStock: sectorStocks.find((item) => item.symbol === stock.symbol) })),
+      ...remoteMatches,
+    ]
+  }, [customWatchlist, sectorStocks, yahooSearchResults, normalizedSearchQuery])
   const showSearchSuggestions = searchFocused && normalizedSearchQuery.length >= 2
 
   const visibleTourSteps = useMemo(
@@ -545,6 +601,36 @@ function App() {
     setNotificationsOpen(true)
   }
 
+  const updateSearchAlertDraft = (symbol: string, draft: Partial<SearchAlertDraft>) => {
+    setSearchAlertDrafts((current) => ({
+      ...current,
+      [symbol]: {
+        price: current[symbol]?.price ?? '',
+        direction: current[symbol]?.direction ?? 'above',
+        ...draft,
+      },
+    }))
+  }
+
+  const submitSearchAlert = (stock: SectorStock) => {
+    const draft = searchAlertDrafts[stock.symbol]
+    const targetPrice = Number((draft?.price ?? '').replace(/,/g, ''))
+    if (!Number.isFinite(targetPrice) || targetPrice <= 0) return
+    addPriceAlert(stock, targetPrice, draft?.direction ?? 'above')
+    setSearchAlertSymbol(null)
+    setSearchAlertDrafts((current) => ({
+      ...current,
+      [stock.symbol]: { price: '', direction: draft?.direction ?? 'above' },
+    }))
+  }
+
+  const handleSearchStockSelect = (stock: SectorStock) => {
+    setActive('home')
+    setSelectedWatchItem(createWatchItemFromSectorStock(stock))
+    setSearchFocused(false)
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
+
   const removePriceAlert = (id: string) => {
     setPriceAlerts((current) => current.filter((alert) => alert.id !== id))
   }
@@ -576,6 +662,62 @@ function App() {
     })
   }, [])
 
+  useEffect(() => {
+    if (!hasSupabaseConfig || activeAlerts.length === 0) return
+    const controller = new AbortController()
+
+    const checkRemoteAlerts = async () => {
+      const activeBySymbol = [...new Set(activeAlerts.map((alert) => alert.symbol))]
+      const priceEntries = await Promise.all(activeBySymbol.map(async (symbol) => {
+        try {
+          const url = new URL(edgeFunctionUrl('get-chart-v2'))
+          url.searchParams.set('symbol', symbol)
+          url.searchParams.set('period', '1D')
+          const response = await fetch(url.toString(), {
+            headers: edgeFunctionHeaders(),
+            signal: controller.signal,
+          })
+          if (!response.ok) return null
+          const data = await response.json() as { series?: number[] }
+          const price = data.series?.at(-1)
+          return typeof price === 'number' && Number.isFinite(price) ? [symbol, price] as const : null
+        } catch {
+          return null
+        }
+      }))
+      const priceMap = new Map(priceEntries.filter((entry): entry is readonly [string, number] => entry !== null))
+      if (priceMap.size === 0) return
+      setPriceAlerts((current) => {
+        let changed = false
+        const next = current.map((alert) => {
+          if (!alert.active) return alert
+          const currentPrice = priceMap.get(alert.symbol)
+          if (typeof currentPrice !== 'number' || !Number.isFinite(currentPrice)) return alert
+          const reached = alert.direction === 'above'
+            ? currentPrice >= alert.targetPrice
+            : currentPrice <= alert.targetPrice
+          if (!reached) return alert
+          changed = true
+          return {
+            ...alert,
+            active: false,
+            triggeredAt: new Date().toISOString(),
+            triggeredPrice: formatTriggeredPrice(currentPrice, alert.currency),
+          }
+        })
+        if (changed) setNotificationsOpen(true)
+        return changed ? next : current
+      })
+    }
+
+    void checkRemoteAlerts()
+    const timer = window.setInterval(() => { void checkRemoteAlerts() }, 15_000)
+    return () => {
+      controller.abort()
+      window.clearInterval(timer)
+    }
+  }, [activeAlerts])
+
   const refreshKnowledgeCards = () => {
     const currentIds = new Set(knowledgeCards.map((c) => c.id))
     const pool = allKnowledgeCards.filter((c) => !currentIds.has(c.id))
@@ -593,6 +735,15 @@ function App() {
   const displayNickname = userProfile?.nickname ?? '민지'
   const avatarInitial = getAvatarInitial(displayNickname)
   const prologueOpen = !userProfile
+  const toActionStock = (stock: WatchItem & { sourceStock?: SectorStock }): SectorStock => stock.sourceStock ?? {
+    name: stock.name,
+    symbol: stock.symbol,
+    price: stock.price,
+    change: stock.chg,
+    changePercent: stock.chg,
+    up: stock.up,
+    currency: stock.symbol.endsWith('.KS') || stock.symbol.endsWith('.KQ') ? 'KRW' : 'USD',
+  }
 
   const createUserProfile = (nickname: string) => {
     const profile = { nickname }
@@ -610,9 +761,7 @@ function App() {
     setSelectedNewsArticle(null)
     setTourActive(false)
     setDashboardEditMode(false)
-    window.requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    })
+    window.location.reload()
   }
 
   return (
@@ -713,15 +862,67 @@ function App() {
             {!searchQuery && <span className="search-kbd">⌘K</span>}
             {showSearchSuggestions && (
               <div className="search-suggestions">
-                {searchMatches.length > 0 ? searchMatches.map((stock) => (
-                  <button key={stock.symbol} type="button" className="search-suggestion" onMouseDown={(e) => e.preventDefault()}>
-                    <span className="search-suggestion-main">
-                      <span className="search-suggestion-name">{stock.name}</span>
-                      <span className="search-suggestion-symbol">{stock.symbol}</span>
-                    </span>
-                    <span className={`search-suggestion-change ${stock.up ? 'up' : 'down'}`}>{stock.chg}</span>
-                  </button>
-                )) : <div className="search-empty">검색 결과 없음</div>}
+                {searchMatches.length > 0 ? searchMatches.map((stock) => {
+                  const actionStock = toActionStock(stock)
+                  const isWatched = customWatchlist.some((item) => item.symbol === stock.symbol)
+                  return (
+                    <div key={stock.symbol} className="search-suggestion" onMouseDown={(e) => e.preventDefault()}>
+                      <button type="button" className="search-suggestion-pick" onClick={() => handleSearchStockSelect(actionStock)}>
+                        <span className="search-suggestion-main">
+                          <span className="search-suggestion-name">{stock.name}</span>
+                          <span className="search-suggestion-symbol">{stock.symbol}</span>
+                        </span>
+                        <span className="search-suggestion-price">
+                          <span>{stock.price}</span>
+                          <span className={`search-suggestion-change ${stock.up ? 'up' : 'down'}`}>{stock.chg}</span>
+                        </span>
+                      </button>
+                      <div className="search-suggestion-actions">
+                        <button
+                          type="button"
+                          className={`search-action-btn ${isWatched ? 'active' : ''}`}
+                          onClick={() => toggleWatchStock(actionStock)}
+                          aria-label={`${stock.name} ${isWatched ? '관심 해제' : '관심 추가'}`}
+                          title={isWatched ? '관심 해제' : '관심 추가'}
+                        >
+                          {isWatched ? '♥' : '♡'}
+                        </button>
+                        <div className="search-alert-menu">
+                          <button
+                            type="button"
+                            className={`search-action-btn ${searchAlertSymbol === stock.symbol ? 'active' : ''}`}
+                            onClick={() => setSearchAlertSymbol((current) => current === stock.symbol ? null : stock.symbol)}
+                            aria-label={`${stock.name} 가격 알림 설정`}
+                            title="가격 알림"
+                          >
+                            🔔
+                          </button>
+                          {searchAlertSymbol === stock.symbol && (
+                            <div className="search-alert-pop">
+                              <div className="search-alert-title">가격 알림</div>
+                              <div className="search-alert-control">
+                                <select
+                                  value={searchAlertDrafts[stock.symbol]?.direction ?? 'above'}
+                                  onChange={(e) => updateSearchAlertDraft(stock.symbol, { direction: e.target.value as PriceAlertDirection })}
+                                >
+                                  <option value="above">이상</option>
+                                  <option value="below">이하</option>
+                                </select>
+                                <input
+                                  inputMode="decimal"
+                                  placeholder={actionStock.currency === 'KRW' ? '목표가' : 'Target'}
+                                  value={searchAlertDrafts[stock.symbol]?.price ?? ''}
+                                  onChange={(e) => updateSearchAlertDraft(stock.symbol, { price: e.target.value })}
+                                />
+                                <button type="button" onClick={() => submitSearchAlert(actionStock)}>등록</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }) : <div className="search-empty">{searchLoading ? 'Yahoo Finance 검색 중…' : '검색 결과 없음'}</div>}
               </div>
             )}
           </div>
