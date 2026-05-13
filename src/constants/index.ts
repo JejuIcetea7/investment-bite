@@ -16,11 +16,76 @@ export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
 export const NEWS_SECTORS = ['AI', '반도체', '조선', '에너지', '헬스', '우주', '바이오', '방산'] as const
 
 export const STOCK_ALIASES: Record<string, string[]> = {
+  // 기존 관심종목
   '005930.KS': ['삼성전자', '삼전', 'samsung', 'samsung electronics', '005930'],
   NVDA: ['nvidia', '엔비디아', '엔비', 'nvda'],
   AAPL: ['apple', 'apple inc', '애플', 'aapl'],
   '035720.KS': ['카카오', 'kakao', '035720'],
   '000660.KS': ['sk하이닉스', 'sk hynix', '하이닉스', 'hynix', '000660'],
+  // AI
+  MSFT: ['microsoft', '마이크로소프트', '마소', 'msft'],
+  GOOGL: ['alphabet', 'google', '구글', '알파벳', 'googl'],
+  AMZN: ['amazon', '아마존', 'amzn'],
+  META: ['meta', 'meta platforms', '메타', '페이스북', 'facebook'],
+  PLTR: ['palantir', '팔란티어', '팔란', 'pltr'],
+  AMD: ['amd', '에이엠디'],
+  AVGO: ['broadcom', '브로드컴', 'avgo'],
+  ORCL: ['oracle', '오라클', 'orcl'],
+  IBM: ['ibm', '아이비엠'],
+  // 반도체
+  TSM: ['tsmc', '티에스엠씨', '대만반도체', 'tsm'],
+  ASML: ['asml', '에이에스엠엘'],
+  QCOM: ['qualcomm', '퀄컴', 'qcom'],
+  INTC: ['intel', '인텔', 'intc'],
+  MU: ['micron', '마이크론', 'mu'],
+  TXN: ['texas instruments', '텍사스인스트루먼츠', 'ti', 'txn'],
+  AMAT: ['applied materials', '어플라이드머티리얼즈', 'amat'],
+  // 에너지
+  XOM: ['exxon', 'exxon mobil', '엑슨모빌', '엑슨', 'xom'],
+  CVX: ['chevron', '셰브론', 'cvx'],
+  COP: ['conocophillips', '코노코필립스', 'cop'],
+  SHEL: ['shell', '쉘', 'shel'],
+  TTE: ['totalenergies', '토탈에너지', 'tte'],
+  BP: ['bp', '비피'],
+  NEE: ['nextera', 'nextera energy', '넥스트에라', 'nee'],
+  ENPH: ['enphase', '인페이즈', 'enph'],
+  FSLR: ['first solar', '퍼스트솔라', 'fslr'],
+  SLB: ['schlumberger', '슐럼버거', 'slb'],
+  // 헬스
+  UNH: ['unitedhealth', 'united health', '유나이티드헬스', 'unh'],
+  LLY: ['eli lilly', '일라이릴리', '릴리', 'lly'],
+  JNJ: ['johnson', 'johnson & johnson', '존슨앤존슨', '존앤존', 'jnj'],
+  MRK: ['merck', '머크', 'mrk'],
+  ABBV: ['abbvie', '애브비', 'abbv'],
+  PFE: ['pfizer', '화이자', 'pfe'],
+  TMO: ['thermo fisher', '써모피셔', 'tmo'],
+  ABT: ['abbott', '애보트', 'abt'],
+  ISRG: ['intuitive surgical', '인튜이티브서지컬', 'isrg'],
+  MDT: ['medtronic', '메드트로닉', 'mdt'],
+  // 우주
+  RKLB: ['rocket lab', '로켓랩', 'rklb'],
+  BA: ['boeing', '보잉', 'ba'],
+  LMT: ['lockheed martin', '록히드마틴', '록히드', 'lmt'],
+  NOC: ['northrop grumman', '노스롭그루먼', 'noc'],
+  RTX: ['rtx', 'raytheon', '레이시온', 'rtx'],
+  // 바이오
+  AMGN: ['amgen', '암젠', 'amgn'],
+  GILD: ['gilead', 'gilead sciences', '길리어드', 'gild'],
+  REGN: ['regeneron', '리제네론', 'regn'],
+  VRTX: ['vertex', '버텍스', 'vrtx'],
+  MRNA: ['moderna', '모더나', 'mrna'],
+  BNTX: ['biontech', '바이온텍', 'bntx'],
+  BIIB: ['biogen', '바이오젠', 'biib'],
+  ILMN: ['illumina', '일루미나', 'ilmn'],
+  CRSP: ['crispr', '크리스퍼', 'crsp'],
+  ALNY: ['alnylam', '알닐람', 'alny'],
+  // 방산
+  GD: ['general dynamics', '제너럴다이나믹스', 'gd'],
+  LHX: ['l3harris', 'l3 harris', '엘쓰리해리스', 'lhx'],
+  HII: ['huntington ingalls', '헌팅턴잉걸스', 'hii'],
+  TDG: ['transdigm', '트랜스다임', 'tdg'],
+  HEI: ['heico', '헤이코', 'hei'],
+  KTOS: ['kratos', '크라토스', 'ktos'],
 }
 
 export const SENTIMENT_CONFIG = {

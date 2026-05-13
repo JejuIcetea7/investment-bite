@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { edgeFunctionUrl, edgeFunctionHeaders, hasSupabaseConfig } from './lib/supabase'
-import type { MarketData, DailyQuiz, DailyQuizData, KnowledgeCard, NewsData, NewsArticle, WatchItem, PropensityResult, DashboardWidgetKey, SectorStock, PriceAlert, PriceAlertDirection } from './types'
+import type { MarketData, DailyQuiz, DailyQuizData, KnowledgeCard, NewsData, NewsArticle, WatchItem, PropensityResult, DashboardWidgetKey, SectorStock, SectorStocksData, PriceAlert, PriceAlertDirection } from './types'
 import { DASHBOARD_WIDGETS, TOUR_STEPS_BY_PAGE, STOCK_ALIASES } from './constants'
 import defaultMarketData from './data/defaultMarketData'
 import { normalizeSearchText, createPropensityResult, createPropensitySurveyPayload } from './utils'
@@ -216,6 +216,7 @@ function App() {
   const [customWatchlist, setCustomWatchlist] = useState<WatchItem[]>(() => readStoredWatchlist() ?? defaultMarketData.watchlist)
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>(() => readStoredPriceAlerts())
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [sectorStocks, setSectorStocks] = useState<SectorStock[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [dashboardEditMode, setDashboardEditMode] = useState(false)
@@ -328,6 +329,19 @@ function App() {
   }, [])
 
   useEffect(() => {
+    let ignore = false
+    const req = hasSupabaseConfig
+      ? fetch(edgeFunctionUrl('get-sector-stocks'), { headers: edgeFunctionHeaders(), cache: 'no-store' })
+      : Promise.reject(new Error('Supabase config missing'))
+    req
+      .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<SectorStocksData> })
+      .catch(() => fetch('/data/sector-stocks.json', { cache: 'no-store' }).then((r) => r.json() as Promise<SectorStocksData>))
+      .then((data) => { if (!ignore) setSectorStocks(data.sectors.flatMap((s) => s.stocks)) })
+      .catch(() => {})
+    return () => { ignore = true }
+  }, [])
+
+  useEffect(() => {
     fetch('/data/knowledge-cards.json')
       .then((r) => r.json() as Promise<{ cards: KnowledgeCard[] }>)
       .then(({ cards }) => {
@@ -379,11 +393,27 @@ function App() {
   )
   const searchMatches = useMemo(() => {
     if (normalizedSearchQuery.length < 2) return []
-    return customWatchlist.filter((stock) => {
+    const watchlistSymbolSet = new Set(customWatchlist.map((w) => w.symbol))
+    const watchlistMatches = customWatchlist.filter((stock) => {
       const aliases = STOCK_ALIASES[stock.symbol] ?? []
       return [stock.name, stock.symbol, ...aliases].map(normalizeSearchText).join(' ').includes(normalizedSearchQuery)
     })
-  }, [customWatchlist, normalizedSearchQuery])
+    const sectorMatches = sectorStocks
+      .filter((stock) => !watchlistSymbolSet.has(stock.symbol))
+      .filter((stock) => {
+        const aliases = STOCK_ALIASES[stock.symbol] ?? []
+        return [stock.name, stock.symbol, ...aliases].map(normalizeSearchText).join(' ').includes(normalizedSearchQuery)
+      })
+      .map((stock) => ({
+        name: stock.name,
+        symbol: stock.symbol,
+        price: stock.price,
+        chg: stock.changePercent,
+        up: stock.up,
+        series: [] as number[],
+      }))
+    return [...watchlistMatches, ...sectorMatches]
+  }, [customWatchlist, sectorStocks, normalizedSearchQuery])
   const showSearchSuggestions = searchFocused && normalizedSearchQuery.length >= 2
 
   const visibleTourSteps = useMemo(
@@ -745,6 +775,7 @@ function App() {
               onToggleWatch={toggleWatchStock}
               onAddPriceAlert={addPriceAlert}
               onPricesUpdate={checkPriceAlerts}
+              onSectorDataLoad={setSectorStocks}
             />
           )}
           {active !== 'news' && !isWholeView && (
