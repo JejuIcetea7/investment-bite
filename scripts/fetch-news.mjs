@@ -43,7 +43,7 @@ function stripHtml(html = '') {
     .trim()
 }
 
-async function fetchNaverNews(query, display = 3) {
+async function fetchNaverNews(query, display = 4) {
   const clientId = process.env.NAVER_CLIENT_ID
   const clientSecret = process.env.NAVER_CLIENT_SECRET
   if (!clientId || !clientSecret) throw new Error('NAVER_CLIENT_ID / NAVER_CLIENT_SECRET 미설정')
@@ -151,8 +151,8 @@ async function main() {
 
   // Naver API 병렬 요청
   const [topRaw, ...sectorRaws] = await Promise.allSettled([
-    fetchNaverNews('증시 주식 시장', 3),
-    ...Object.entries(SECTORS).map(([, query]) => fetchNaverNews(query, 3)),
+    fetchNaverNews('증시 주식 시장', 4),
+    ...Object.entries(SECTORS).map(([, query]) => fetchNaverNews(query, 4)),
   ])
 
   const topArticles = topRaw.status === 'fulfilled' ? topRaw.value : []
