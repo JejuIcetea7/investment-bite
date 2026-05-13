@@ -584,6 +584,11 @@ function App() {
     })
   }
 
+  const removeWatchlistItem = (symbol: string) => {
+    setCustomWatchlist((current) => current.filter((item) => item.symbol !== symbol))
+    if (selectedWatchItem?.symbol === symbol) setSelectedWatchItem(null)
+  }
+
   const addPriceAlert = (stock: SectorStock, targetPrice: number, direction: PriceAlertDirection) => {
     setPriceAlerts((current) => [
       {
@@ -776,7 +781,7 @@ function App() {
         </div>
       )}
 
-      <aside className="sidebar">
+      <aside className="sidebar" data-tour="sidebar">
         <button type="button" className="sidebar-logo-center" onClick={goHomeFromLogo} aria-label="대시보드 홈으로 이동">
           <img
             src="/charcter/대표_문구.png"
@@ -789,7 +794,7 @@ function App() {
           <div className="greet-name">{displayNickname}님 👋</div>
           <div className="greet-meta"><span className="greet-dot" />오늘도 좋은 하루 되세요</div>
         </div>
-        <nav className="nav">
+        <nav className="nav" data-tour="sidebar-menu">
           <div className="nav-label">Menu</div>
           {([
             ['home', '대시보드', 'menu-dashboard'],
@@ -801,7 +806,7 @@ function App() {
             </button>
           ))}
         </nav>
-        <nav className="nav">
+        <nav className="nav" data-tour="sidebar-tools">
           <div className="nav-label">Tools</div>
           {active === 'home' && (
             <>
@@ -818,7 +823,7 @@ function App() {
           </button>
         </nav>
         <div className="sidebar-bottom">
-          <div className="sidebar-pick">
+          <div className="sidebar-pick" data-tour="today-pick">
             <div className="know-feature-tag">Today's Pick</div>
             <div className={`sidebar-pick-content ${pickFading ? 'fading' : ''}`}>
               <div className="sidebar-pick-emoji">{TODAY_PICKS[pickIndex].emoji}</div>
@@ -848,7 +853,7 @@ function App() {
             </div>
             <div className="header-date">{marketData.generatedAtLabel}</div>
           </div>
-          <div className="search">
+          <div className="search" data-tour="header-search">
             <span className="search-icon">⌕</span>
             <input
               value={searchQuery}
@@ -926,7 +931,7 @@ function App() {
               </div>
             )}
           </div>
-          <div className="notification-wrap">
+          <div className="notification-wrap" data-tour="header-alert">
             <button
               className="header-btn"
               title="알림"
@@ -1008,6 +1013,7 @@ function App() {
               dailyQuizCorrectCount={dailyQuizCorrectCount}
               setHoverHelp={setHoverHelp}
               setSelectedWatchItem={setSelectedWatchItem}
+              onRemoveWatchItem={removeWatchlistItem}
               onNavigateToNews={() => setActive('news')}
               onRestartSurvey={openPropensity}
               onToggleWidget={toggleDashboardWidget}

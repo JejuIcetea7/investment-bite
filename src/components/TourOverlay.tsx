@@ -17,6 +17,11 @@ export default function TourOverlay({
   const [box, setBox] = useState<null | (TourStep & { x: number; y: number; w: number; h: number })>(null)
 
   const CHAR_MAP: Record<string, string> = {
+    '[data-tour="sidebar-menu"]': '/charcter/궁금한_아이콘.png',
+    '[data-tour="sidebar-tools"]': '/charcter/투자_상식_카드_아이콘.png',
+    '[data-tour="today-pick"]': '/charcter/공부하는_아이콘.png',
+    '[data-tour="header-search"]': '/charcter/궁금한_아이콘.png',
+    '[data-tour="header-alert"]': '/charcter/느낌표_아이콘.png',
     '[data-tour="market-summary"]': '/charcter/궁금한_아이콘.png',
     '[data-tour="chart"]': '/charcter/느낌표_아이콘.png',
     '[data-tour="watch"]': '/charcter/하트_아이콘.png',

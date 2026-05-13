@@ -18,7 +18,7 @@ export default function NewsSummarySection({
       <section className="card" data-tour="news">
         <div className="card-head">
           <div className="card-head-left">
-            <div className="card-num"><span className="card-num-dot">3</span> 주요 뉴스</div>
+            <div className="card-num"><span className="card-num-dot">📰</span> 주요 뉴스</div>
             <div className="card-title">시장 핵심 뉴스</div>
           </div>
           <button className="btn-ghost" style={{ fontSize: 12, padding: '6px 12px' }} onClick={onNavigateToNews}>

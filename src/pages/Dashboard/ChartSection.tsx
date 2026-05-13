@@ -256,12 +256,12 @@ export default function ChartSection({
                     ))}
                   </div>
                 </div>
-                <button className="chart-analysis-btn" type="button" onClick={handleAnalysisClick}>
-                  {displayChart.name} 차트분석
-                </button>
               </div>
             </div>
           </div>
+          <button className="chart-analysis-btn" type="button" onClick={handleAnalysisClick}>
+            {displayChart.name} 차트분석
+          </button>
       <div className="chart-stock-row">
         <div>
           <div className="chart-symbol">{displayChart.symbol} · {displayChart.currency === 'KRW' ? 'KOSPI' : 'NASDAQ'}</div>

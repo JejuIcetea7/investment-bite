@@ -1,4 +1,4 @@
-import { useMemo, type Dispatch, type SetStateAction } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type { MarketData, WatchItem, PropensityResult, KnowledgeCard, DailyQuiz, DashboardWidgetKey, HoverHelp } from '../../types'
 import ChartSection from './ChartSection'
 import NewsSummarySection from './NewsSummarySection'
@@ -30,6 +30,7 @@ export default function DashboardPage({
   onPickQuizAnswer,
   onNextQuiz,
   onRestartQuiz,
+  onRemoveWatchItem,
 }: {
   marketData: MarketData
   beginner: boolean
@@ -52,6 +53,7 @@ export default function DashboardPage({
   onPickQuizAnswer: (index: number) => void
   onNextQuiz: () => void
   onRestartQuiz: () => void
+  onRemoveWatchItem: (symbol: string) => void
 }) {
   const displayChart = useMemo(() => {
     if (!selectedWatchItem) return marketData.chart
@@ -93,6 +95,19 @@ export default function DashboardPage({
       ),
     },
     {
+      key: 'know' as const,
+      node: (
+        <KnowledgeSection
+          knowledgeCards={knowledgeCards}
+          beginner={beginner}
+          hiddenWidgets={hiddenWidgets}
+          editMode={dashboardEditMode}
+          onRefresh={onRefreshKnowledge}
+          onToggle={() => onToggleWidget('know')}
+        />
+      ),
+    },
+    {
       key: 'propensity' as const,
       node: (
         <PropensitySection
@@ -103,19 +118,6 @@ export default function DashboardPage({
           editMode={dashboardEditMode}
           onRestartSurvey={onRestartSurvey}
           onToggle={() => onToggleWidget('propensity')}
-        />
-      ),
-    },
-    {
-      key: 'know' as const,
-      node: (
-        <KnowledgeSection
-          knowledgeCards={knowledgeCards}
-          beginner={beginner}
-          hiddenWidgets={hiddenWidgets}
-          editMode={dashboardEditMode}
-          onRefresh={onRefreshKnowledge}
-          onToggle={() => onToggleWidget('know')}
         />
       ),
     },
@@ -157,6 +159,39 @@ export default function DashboardPage({
   const visibleDashboardWidgets = dashboardEditMode
     ? dashboardWidgets
     : dashboardWidgets.filter((widget) => !hiddenWidgets.includes(widget.key))
+  const visibleWidgetKeys = visibleDashboardWidgets.map((widget) => widget.key).join('|')
+  const widgetSlotRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [widgetRowSpans, setWidgetRowSpans] = useState<Record<string, number>>({})
+
+  useLayoutEffect(() => {
+    const rowHeight = 8
+    const rowGap = 20
+    const measure = () => {
+      const nextSpans: Record<string, number> = {}
+
+      for (const widget of visibleDashboardWidgets) {
+        const element = widgetSlotRefs.current[widget.key]
+        if (!element) continue
+        nextSpans[widget.key] = Math.max(1, Math.ceil((element.offsetHeight + rowGap) / (rowHeight + rowGap)))
+      }
+
+      setWidgetRowSpans(nextSpans)
+    }
+
+    measure()
+
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => measure()) : null
+    for (const widget of visibleDashboardWidgets) {
+      const element = widgetSlotRefs.current[widget.key]
+      if (element && observer) observer.observe(element)
+    }
+
+    window.addEventListener('resize', measure)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [visibleWidgetKeys, dashboardEditMode])
 
   return (
     <>
@@ -172,10 +207,16 @@ export default function DashboardPage({
         selectedWatchItem={selectedWatchItem}
         beginner={beginner}
         onSelect={setSelectedWatchItem}
+        onRemove={onRemoveWatchItem}
       />
       <div className="dashboard-widget-columns">
         {visibleDashboardWidgets.map((widget) => (
-          <div key={widget.key} className="dashboard-widget-slot">
+          <div
+            key={widget.key}
+            ref={(element) => { widgetSlotRefs.current[widget.key] = element }}
+            className="dashboard-widget-slot"
+            style={widgetRowSpans[widget.key] ? { gridRowEnd: `span ${widgetRowSpans[widget.key]}` } : undefined}
+          >
             {widget.node}
           </div>
         ))}
