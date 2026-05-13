@@ -1,121 +1,1050 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
+import { edgeFunctionUrl, edgeFunctionHeaders, hasSupabaseConfig } from './lib/supabase'
+import type { MarketData, DailyQuiz, DailyQuizData, KnowledgeCard, NewsData, NewsArticle, WatchItem, PropensityResult, DashboardWidgetKey, SectorStock, SectorStocksData, PriceAlert, PriceAlertDirection } from './types'
+import { DASHBOARD_WIDGETS, TOUR_STEPS_BY_PAGE, STOCK_ALIASES } from './constants'
+import defaultMarketData from './data/defaultMarketData'
+import { normalizeSearchText, createPropensityResult, createPropensitySurveyPayload } from './utils'
+import SectionHelpTooltip from './components/SectionHelpTooltip'
+import TourOverlay from './components/TourOverlay'
+import SurveyModal from './components/SurveyModal'
+import PrologueModal from './components/PrologueModal'
+import IndicatorsSection from './pages/Dashboard/IndicatorsSection'
+import DashboardPage from './pages/Dashboard'
+import WholePage from './pages/WholePage'
+import NewsPage from './pages/NewsPage'
+import NewsDetailModal from './pages/NewsPage/NewsDetailModal'
+
+const TODAY_PICKS = [
+  {
+    emoji: '👶',
+    title: '워렌 버핏의 첫 실수',
+    desc: '11살에 주식을 팔아 20달러 벌었어요. 그 주식은 나중에 200달러가 됐죠.',
+  },
+  {
+    emoji: '🚫',
+    title: '217번의 거절',
+    desc: '스타벅스 창업자는 217곳에서 투자를 거절당했어요.',
+  },
+  {
+    emoji: '💸',
+    title: '800달러의 실수',
+    desc: '애플 지분 10%를 800달러에 팔았어요. 지금 가치는 수조 원이에요.',
+  },
+  {
+    emoji: '📈',
+    title: '전쟁 중에 오른 주식',
+    desc: '2차 세계대전 중에도 S&P500은 꾸준히 올랐어요.',
+  },
+  {
+    emoji: '🐢',
+    title: '느려도 이기는 법',
+    desc: '버핏 재산의 99%는 50세 이후에 쌓였어요. 참는 게 실력이에요.',
+  },
+  {
+    emoji: '🎰',
+    title: '카지노보다 나은 주식',
+    desc: '카지노 승률은 49%, S&P500 장기 수익 확률은 75%예요.',
+  },
+  {
+    emoji: '🧾',
+    title: '하루 차이의 세금',
+    desc: '1년 미만 매매는 세금이 더 많아요. 하루 차이로 수익이 달라져요.',
+  },
+  {
+    emoji: '🌍',
+    title: '가장 비싼 주식',
+    desc: '버크셔 해서웨이 A주 한 주는 약 7억 원이에요.',
+  },
+  {
+    emoji: '🍕',
+    title: '피자 두 판의 전설',
+    desc: '비트코인 1만 개로 피자 두 판을 샀어요. 지금 가치는 수천억 원이에요.',
+  },
+  {
+    emoji: '📉',
+    title: '폭락은 늘 있었다',
+    desc: 'S&P500은 50% 이상 폭락을 세 번 겪었어요. 그래도 결국 올랐죠.',
+  },
+]
+
+type UserProfile = {
+  nickname: string
+}
+
+const USER_PROFILE_KEY = 'investment-bite-user-profile'
+const PROPENSITY_RESULT_KEY = 'investment-bite-propensity-result'
+const PROPENSITY_ANALYSIS_CACHE_KEY = 'investment-bite-propensity-analysis-cache'
+const WATCHLIST_STORAGE_KEY = 'investment-bite-watchlist'
+const PRICE_ALERTS_STORAGE_KEY = 'investment-bite-price-alerts'
+
+type SavedPropensityResult = {
+  answers: number[]
+  result: PropensityResult
+  completedAt: string
+}
+
+type CachedPropensityAnalysis = Pick<PropensityResult, 'llmSummary' | 'strengths' | 'cautions' | 'recommendation'>
+type SearchAlertDraft = {
+  price: string
+  direction: PriceAlertDirection
+}
+
+const parsePriceValue = (price: string) => {
+  const normalized = price.replace(/[$,원\s]/g, '')
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const createWatchItemFromSectorStock = (stock: SectorStock): WatchItem => {
+  const changeValue = Number(stock.changePercent.replace('%', ''))
+  const magnitude = Number.isFinite(changeValue) ? Math.min(Math.max(Math.abs(changeValue), 0.4), 6) : 1
+  const direction = stock.up ? 1 : -1
+  return {
+    name: stock.name,
+    symbol: stock.symbol,
+    price: stock.price,
+    chg: stock.changePercent,
+    up: stock.up,
+    series: Array.from({ length: 8 }, (_, index) => 10 + direction * index * (magnitude / 7)),
+  }
+}
+
+const formatTriggeredPrice = (price: number, currency: string) => {
+  if (currency === 'KRW') return Math.round(price).toLocaleString('ko-KR')
+  return price.toLocaleString('en-US', { maximumFractionDigits: 2 })
+}
+
+const readStoredWatchlist = (): WatchItem[] | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(WATCHLIST_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return null
+    return parsed.filter((item): item is WatchItem => (
+      typeof item?.name === 'string' &&
+      typeof item?.symbol === 'string' &&
+      typeof item?.price === 'string' &&
+      typeof item?.chg === 'string' &&
+      typeof item?.up === 'boolean' &&
+      Array.isArray(item?.series)
+    ))
+  } catch {
+    return null
+  }
+}
+
+const readStoredPriceAlerts = (): PriceAlert[] => {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(PRICE_ALERTS_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((item): item is PriceAlert => (
+      typeof item?.id === 'string' &&
+      typeof item?.name === 'string' &&
+      typeof item?.symbol === 'string' &&
+      typeof item?.targetPrice === 'number' &&
+      (item?.direction === 'above' || item?.direction === 'below') &&
+      typeof item?.currency === 'string' &&
+      typeof item?.active === 'boolean' &&
+      typeof item?.createdAt === 'string'
+    ))
+  } catch {
+    return []
+  }
+}
+
+const getAvatarInitial = (nickname: string) => {
+  const normalized = nickname.trim()
+  return normalized ? Array.from(normalized)[0] : '?'
+}
+
+const readSavedPropensityResult = (): PropensityResult | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(PROPENSITY_RESULT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<SavedPropensityResult>
+    if (Array.isArray(parsed.answers) && (!parsed.result?.characterImage || !parsed.result?.analysisSource)) {
+      return createPropensityResult(parsed.answers)
+    }
+    return parsed.result && typeof parsed.result.title === 'string' && typeof parsed.result.score === 'number'
+      ? parsed.result
+      : null
+  } catch {
+    return null
+  }
+}
+
+const getPropensityAnalysisCacheKey = (answers: number[], result: PropensityResult, watchlistSymbols: string[]) => {
+  return `${answers.join('-')}::${result.title}::${result.score}::${watchlistSymbols.slice().sort().join(',')}`
+}
+
+const readCachedPropensityAnalysis = (cacheKey: string): CachedPropensityAnalysis | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(PROPENSITY_ANALYSIS_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Record<string, CachedPropensityAnalysis>
+    return parsed[cacheKey] ?? null
+  } catch {
+    return null
+  }
+}
+
+const writeCachedPropensityAnalysis = (cacheKey: string, analysis: CachedPropensityAnalysis) => {
+  if (typeof window === 'undefined') return
+  try {
+    const raw = window.localStorage.getItem(PROPENSITY_ANALYSIS_CACHE_KEY)
+    const parsed = raw ? JSON.parse(raw) as Record<string, CachedPropensityAnalysis> : {}
+    parsed[cacheKey] = analysis
+    window.localStorage.setItem(PROPENSITY_ANALYSIS_CACHE_KEY, JSON.stringify(parsed))
+  } catch { /* ignore */ }
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [beginner, setBeginner] = useState(true)
+  const [active, setActive] = useState('home')
+  const [marketData, setMarketData] = useState<MarketData>(defaultMarketData)
+  const [dailyQuizzes, setDailyQuizzes] = useState<DailyQuiz[]>([])
+  const [dailyQuizIndex, setDailyQuizIndex] = useState(0)
+  const [selectedDailyAnswer, setSelectedDailyAnswer] = useState<number | null>(null)
+  const [dailyQuizCorrectCount, setDailyQuizCorrectCount] = useState(0)
+  const [tourActive, setTourActive] = useState(false)
+  const [tourStep, setTourStep] = useState(0)
+  const [propensityOpen, setPropensityOpen] = useState(false)
+  const [propensityStep, setPropensityStep] = useState(0)
+  const [propensityAnswers, setPropensityAnswers] = useState<number[]>([])
+  const [propensityResult, setPropensityResult] = useState<PropensityResult | null>(() => readSavedPropensityResult())
+  const [propensityAnalysisLoading, setPropensityAnalysisLoading] = useState(false)
+  const [hoverHelp, setHoverHelp] = useState<{ title: string; text: string; x: number; y: number } | null>(null)
+  const [selectedWatchItem, setSelectedWatchItem] = useState<WatchItem | null>(null)
+  const [customWatchlist, setCustomWatchlist] = useState<WatchItem[]>(() => readStoredWatchlist() ?? defaultMarketData.watchlist)
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>(() => readStoredPriceAlerts())
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [sectorStocks, setSectorStocks] = useState<SectorStock[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
+  const [yahooSearchResults, setYahooSearchResults] = useState<SectorStock[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchAlertSymbol, setSearchAlertSymbol] = useState<string | null>(null)
+  const [searchAlertDrafts, setSearchAlertDrafts] = useState<Record<string, SearchAlertDraft>>({})
+  const [dashboardEditMode, setDashboardEditMode] = useState(false)
+  const [hiddenWidgets, setHiddenWidgets] = useState<DashboardWidgetKey[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const raw = window.localStorage.getItem('dashboard-hidden-widgets')
+      if (!raw) return []
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) return []
+      return parsed.filter((item): item is DashboardWidgetKey => DASHBOARD_WIDGETS.includes(item as DashboardWidgetKey))
+    } catch {
+      return []
+    }
+  })
+  const [loadingVisible, setLoadingVisible] = useState(true)
+  const [allKnowledgeCards, setAllKnowledgeCards] = useState<KnowledgeCard[]>([])
+  const [knowledgeCards, setKnowledgeCards] = useState<KnowledgeCard[]>([])
+  const [newsData, setNewsData] = useState<NewsData | null>(null)
+  const [selectedNewsArticle, setSelectedNewsArticle] = useState<NewsArticle | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = window.localStorage.getItem(USER_PROFILE_KEY)
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as Partial<UserProfile>
+      return typeof parsed.nickname === 'string' && parsed.nickname.trim()
+        ? { nickname: parsed.nickname.trim() }
+        : null
+    } catch {
+      return null
+    }
+  })
+  const [pendingFirstTour, setPendingFirstTour] = useState(false)
+  const [pickIndex, setPickIndex] = useState(0)
+  const [pickFading, setPickFading] = useState(false)
+
+  useEffect(() => {
+    document.title = '투자 한입 대시보드 · Yahoo Finance'
+    let ignore = false
+    const marketRequest = hasSupabaseConfig
+      ? fetch(edgeFunctionUrl('get-market'), { headers: edgeFunctionHeaders() })
+      : Promise.reject(new Error('Supabase config missing'))
+
+    marketRequest
+      .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<MarketData> })
+      .then((payload) => { if (!ignore) setMarketData(payload) })
+      .catch(() => {
+        // Edge Function 실패 시 정적 파일 fallback
+        fetch('/data/market-data.json', { cache: 'no-store' })
+          .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<MarketData> })
+          .then((payload) => { if (!ignore) setMarketData(payload) })
+          .catch(() => {})
+      })
+      .finally(() => { if (!ignore) setTimeout(() => setLoadingVisible(false), 350) })
+    return () => { ignore = true }
+  }, [])
+
+  useEffect(() => {
+    try { window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(customWatchlist)) }
+    catch { /* ignore */ }
+  }, [customWatchlist])
+
+  useEffect(() => {
+    try { window.localStorage.setItem(PRICE_ALERTS_STORAGE_KEY, JSON.stringify(priceAlerts)) }
+    catch { /* ignore */ }
+  }, [priceAlerts])
+
+  useEffect(() => {
+    let ignore = false
+    fetch('/data/daily-quiz.json', { cache: 'no-store' })
+      .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<DailyQuizData> })
+      .then((payload) => { if (!ignore) setDailyQuizzes(payload.quizzes) })
+      .catch(() => { if (!ignore) setDailyQuizzes([]) })
+    return () => { ignore = true }
+  }, [])
+
+  useEffect(() => {
+    const CACHE_KEY = 'news_cache'
+    const CACHE_TTL = 1000 * 60 * 30 // 30분
+
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached)
+        if (Date.now() - timestamp < CACHE_TTL) {
+          setNewsData(data)
+          return
+        }
+      } catch {}
+    }
+
+    // Edge Function에서 실시간 뉴스 가져오기, 실패 시 캐시된 news.json fallback
+    const newsRequest = hasSupabaseConfig
+      ? fetch(edgeFunctionUrl('get-news'), { headers: edgeFunctionHeaders() })
+      : Promise.reject(new Error('Supabase config missing'))
+
+    newsRequest
+      .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json() as Promise<NewsData> })
+      .then(data => {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }))
+        setNewsData(data)
+      })
+      .catch(() => {
+        fetch('/data/news.json', { cache: 'no-store' })
+          .then(r => r.json() as Promise<NewsData>)
+          .then(setNewsData)
+          .catch(() => {})
+      })
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+    const req = hasSupabaseConfig
+      ? fetch(edgeFunctionUrl('get-sector-stocks'), { headers: edgeFunctionHeaders(), cache: 'no-store' })
+      : Promise.reject(new Error('Supabase config missing'))
+    req
+      .then(async (r) => { if (!r.ok) throw new Error(); return r.json() as Promise<SectorStocksData> })
+      .catch(() => fetch('/data/sector-stocks.json', { cache: 'no-store' }).then((r) => r.json() as Promise<SectorStocksData>))
+      .then((data) => { if (!ignore) setSectorStocks(data.sectors.flatMap((s) => s.stocks)) })
+      .catch(() => {})
+    return () => { ignore = true }
+  }, [])
+
+  useEffect(() => {
+    fetch('/data/knowledge-cards.json')
+      .then((r) => r.json() as Promise<{ cards: KnowledgeCard[] }>)
+      .then(({ cards }) => {
+        setAllKnowledgeCards(cards)
+        setKnowledgeCards([...cards].sort(() => Math.random() - 0.5).slice(0, 2))
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    try { window.localStorage.setItem('dashboard-hidden-widgets', JSON.stringify(hiddenWidgets)) }
+    catch { /* ignore */ }
+  }, [hiddenWidgets])
+
+  useEffect(() => {
+    const query = searchQuery.trim()
+    if (!hasSupabaseConfig || query.length < 2) {
+      setYahooSearchResults([])
+      setSearchLoading(false)
+      return
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      setSearchLoading(true)
+      const url = new URL(edgeFunctionUrl('search-stocks'))
+      url.searchParams.set('q', query)
+      fetch(url.toString(), {
+        headers: edgeFunctionHeaders(),
+        signal: controller.signal,
+      })
+        .then((response) => response.json() as Promise<{ stocks?: SectorStock[] }>)
+        .then((data) => setYahooSearchResults(data.stocks ?? []))
+        .catch(() => setYahooSearchResults([]))
+        .finally(() => setSearchLoading(false))
+    }, 260)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (!pendingFirstTour || loadingVisible || !userProfile) return
+    setActive('home')
+    setTourStep(0)
+    window.setTimeout(() => setTourActive(true), 120)
+    setPendingFirstTour(false)
+  }, [loadingVisible, pendingFirstTour, userProfile])
+
+  useEffect(() => {
+    const interval = setInterval(() => setPickFading(true), 10000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (!pickFading) return
+    const timer = setTimeout(() => {
+      setPickIndex(i => (i + 1) % TODAY_PICKS.length)
+      setPickFading(false)
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [pickFading])
+
+  const normalizedSearchQuery = normalizeSearchText(searchQuery)
+  const dashboardMarketData = useMemo(() => ({
+    ...marketData,
+    watchlist: customWatchlist,
+  }), [customWatchlist, marketData])
+  const triggeredAlerts = useMemo(
+    () => priceAlerts.filter((alert) => !alert.active && alert.triggeredAt).sort((a, b) => (b.triggeredAt ?? '').localeCompare(a.triggeredAt ?? '')),
+    [priceAlerts],
+  )
+  const activeAlerts = useMemo(
+    () => priceAlerts.filter((alert) => alert.active),
+    [priceAlerts],
+  )
+  const searchMatches = useMemo(() => {
+    if (normalizedSearchQuery.length < 2) return []
+    const watchlistSymbolSet = new Set(customWatchlist.map((w) => w.symbol))
+    const watchlistMatches = customWatchlist.filter((stock) => {
+      const aliases = STOCK_ALIASES[stock.symbol] ?? []
+      return [stock.name, stock.symbol, ...aliases].map(normalizeSearchText).join(' ').includes(normalizedSearchQuery)
+    })
+    const sectorMatches = sectorStocks
+      .filter((stock) => !watchlistSymbolSet.has(stock.symbol))
+      .filter((stock) => {
+        const aliases = STOCK_ALIASES[stock.symbol] ?? []
+        return [stock.name, stock.symbol, ...aliases].map(normalizeSearchText).join(' ').includes(normalizedSearchQuery)
+      })
+      .map((stock) => ({
+        name: stock.name,
+        symbol: stock.symbol,
+        price: stock.price,
+        chg: stock.changePercent,
+        up: stock.up,
+        series: [] as number[],
+      }))
+    const knownSymbolSet = new Set([...watchlistMatches, ...sectorMatches].map((stock) => stock.symbol))
+    const remoteMatches = yahooSearchResults
+      .filter((stock) => !knownSymbolSet.has(stock.symbol))
+      .map((stock) => ({
+        name: stock.name,
+        symbol: stock.symbol,
+        price: stock.price,
+        chg: stock.changePercent,
+        up: stock.up,
+        series: [] as number[],
+        sourceStock: stock,
+      }))
+    return [
+      ...watchlistMatches.map((stock) => ({ ...stock, sourceStock: sectorStocks.find((item) => item.symbol === stock.symbol) })),
+      ...sectorMatches.map((stock) => ({ ...stock, sourceStock: sectorStocks.find((item) => item.symbol === stock.symbol) })),
+      ...remoteMatches,
+    ]
+  }, [customWatchlist, sectorStocks, yahooSearchResults, normalizedSearchQuery])
+  const showSearchSuggestions = searchFocused && normalizedSearchQuery.length >= 2
+
+  const visibleTourSteps = useMemo(
+    () => {
+      const pageSteps = TOUR_STEPS_BY_PAGE[active as keyof typeof TOUR_STEPS_BY_PAGE] ?? TOUR_STEPS_BY_PAGE.home
+      return pageSteps.filter((step) => !step.widgetKey || !hiddenWidgets.includes(step.widgetKey))
+    },
+    [active, hiddenWidgets],
+  )
+  const safeTourStep = Math.min(tourStep, visibleTourSteps.length - 1)
+
+  const openPropensity = () => { setPropensityStep(0); setPropensityAnswers([]); setPropensityOpen(true) }
+  const closePropensity = () => setPropensityOpen(false)
+
+  const pickPropensityAnswer = (index: number) => {
+    setPropensityAnswers((current) => { const next = [...current]; next[propensityStep] = index; return next })
+  }
+
+  const requestPropensityAnalysis = async (answers: number[], ruleResult: PropensityResult, watchlist: WatchItem[]) => {
+    const watchlistSymbols = watchlist.map((w) => w.symbol)
+    const cacheKey = getPropensityAnalysisCacheKey(answers, ruleResult, watchlistSymbols)
+    const cachedAnalysis = readCachedPropensityAnalysis(cacheKey)
+    if (cachedAnalysis) {
+      const cachedResult: PropensityResult = {
+        ...ruleResult,
+        llmSummary: cachedAnalysis.llmSummary || ruleResult.summary,
+        strengths: cachedAnalysis.strengths?.length ? cachedAnalysis.strengths : ruleResult.strengths,
+        cautions: cachedAnalysis.cautions?.length ? cachedAnalysis.cautions : ruleResult.cautions,
+        recommendation: cachedAnalysis.recommendation || ruleResult.recommendation,
+        analysisSource: 'llm',
+      }
+      setPropensityResult(cachedResult)
+      try {
+        window.localStorage.setItem(PROPENSITY_RESULT_KEY, JSON.stringify({
+          answers,
+          result: cachedResult,
+          completedAt: new Date().toISOString(),
+        }))
+      } catch { /* ignore */ }
+      return
+    }
+
+    setPropensityAnalysisLoading(true)
+    try {
+      if (!hasSupabaseConfig) throw new Error('Supabase config missing')
+      const response = await fetch(edgeFunctionUrl('analyze-propensity'), {
+        method: 'POST',
+        headers: { ...edgeFunctionHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(createPropensitySurveyPayload(answers, ruleResult, watchlist)),
+      })
+      if (!response.ok) throw new Error(`analyze-propensity ${response.status}`)
+      const analysis = await response.json() as Pick<PropensityResult, 'llmSummary' | 'strengths' | 'cautions' | 'recommendation'>
+      const enhancedResult: PropensityResult = {
+        ...ruleResult,
+        llmSummary: analysis.llmSummary || ruleResult.summary,
+        strengths: analysis.strengths?.length ? analysis.strengths : ruleResult.strengths,
+        cautions: analysis.cautions?.length ? analysis.cautions : ruleResult.cautions,
+        recommendation: analysis.recommendation || ruleResult.recommendation,
+        analysisSource: 'llm',
+      }
+      writeCachedPropensityAnalysis(cacheKey, {
+        llmSummary: enhancedResult.llmSummary,
+        strengths: enhancedResult.strengths,
+        cautions: enhancedResult.cautions,
+        recommendation: enhancedResult.recommendation,
+      })
+      setPropensityResult(enhancedResult)
+      try {
+        window.localStorage.setItem(PROPENSITY_RESULT_KEY, JSON.stringify({
+          answers,
+          result: enhancedResult,
+          completedAt: new Date().toISOString(),
+        }))
+      } catch { /* ignore */ }
+    } catch {
+      setPropensityResult((current) => current ? { ...current, analysisSource: 'rule' } : ruleResult)
+    } finally {
+      setPropensityAnalysisLoading(false)
+    }
+  }
+
+  const nextPropensityStep = () => {
+    if (propensityStep < propensityAnswers.length - 1) { setPropensityStep((s) => s + 1); return }
+    const isLast = propensityStep === 3
+    if (!isLast) { setPropensityStep((s) => s + 1); return }
+    const completedAnswers = [...propensityAnswers]
+    const result = createPropensityResult(completedAnswers)
+    setPropensityResult(result)
+    try {
+      window.localStorage.setItem(PROPENSITY_RESULT_KEY, JSON.stringify({
+        answers: completedAnswers,
+        result,
+        completedAt: new Date().toISOString(),
+      }))
+    } catch { /* ignore */ }
+    setPropensityOpen(false)
+    void requestPropensityAnalysis(completedAnswers, result, customWatchlist)
+  }
+
+  const toggleDashboardWidget = (key: DashboardWidgetKey) => {
+    setHiddenWidgets((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])
+  }
+
+  const toggleWatchStock = (stock: SectorStock) => {
+    setCustomWatchlist((current) => {
+      const exists = current.some((item) => item.symbol === stock.symbol)
+      if (exists) {
+        if (selectedWatchItem?.symbol === stock.symbol) setSelectedWatchItem(null)
+        return current.filter((item) => item.symbol !== stock.symbol)
+      }
+      return [...current, createWatchItemFromSectorStock(stock)]
+    })
+  }
+
+  const addPriceAlert = (stock: SectorStock, targetPrice: number, direction: PriceAlertDirection) => {
+    setPriceAlerts((current) => [
+      {
+        id: `${stock.symbol}-${Date.now()}`,
+        name: stock.name,
+        symbol: stock.symbol,
+        targetPrice,
+        direction,
+        currency: stock.currency,
+        active: true,
+        createdAt: new Date().toISOString(),
+      },
+      ...current,
+    ])
+    setNotificationsOpen(true)
+  }
+
+  const updateSearchAlertDraft = (symbol: string, draft: Partial<SearchAlertDraft>) => {
+    setSearchAlertDrafts((current) => ({
+      ...current,
+      [symbol]: {
+        price: current[symbol]?.price ?? '',
+        direction: current[symbol]?.direction ?? 'above',
+        ...draft,
+      },
+    }))
+  }
+
+  const submitSearchAlert = (stock: SectorStock) => {
+    const draft = searchAlertDrafts[stock.symbol]
+    const targetPrice = Number((draft?.price ?? '').replace(/,/g, ''))
+    if (!Number.isFinite(targetPrice) || targetPrice <= 0) return
+    addPriceAlert(stock, targetPrice, draft?.direction ?? 'above')
+    setSearchAlertSymbol(null)
+    setSearchAlertDrafts((current) => ({
+      ...current,
+      [stock.symbol]: { price: '', direction: draft?.direction ?? 'above' },
+    }))
+  }
+
+  const handleSearchStockSelect = (stock: SectorStock) => {
+    setActive('home')
+    setSelectedWatchItem(createWatchItemFromSectorStock(stock))
+    setSearchFocused(false)
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
+
+  const removePriceAlert = (id: string) => {
+    setPriceAlerts((current) => current.filter((alert) => alert.id !== id))
+  }
+
+  const checkPriceAlerts = useCallback((stocks: SectorStock[]) => {
+    setPriceAlerts((current) => {
+      let changed = false
+      const stockMap = new Map(stocks.map((stock) => [stock.symbol, stock]))
+      const next = current.map((alert) => {
+        if (!alert.active) return alert
+        const stock = stockMap.get(alert.symbol)
+        if (!stock) return alert
+        const currentPrice = parsePriceValue(stock.price)
+        if (currentPrice === null) return alert
+        const reached = alert.direction === 'above'
+          ? currentPrice >= alert.targetPrice
+          : currentPrice <= alert.targetPrice
+        if (!reached) return alert
+        changed = true
+        return {
+          ...alert,
+          active: false,
+          triggeredAt: new Date().toISOString(),
+          triggeredPrice: stock.price,
+        }
+      })
+      if (changed) setNotificationsOpen(true)
+      return changed ? next : current
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!hasSupabaseConfig || activeAlerts.length === 0) return
+    const controller = new AbortController()
+
+    const checkRemoteAlerts = async () => {
+      const activeBySymbol = [...new Set(activeAlerts.map((alert) => alert.symbol))]
+      const priceEntries = await Promise.all(activeBySymbol.map(async (symbol) => {
+        try {
+          const url = new URL(edgeFunctionUrl('get-chart-v2'))
+          url.searchParams.set('symbol', symbol)
+          url.searchParams.set('period', '1D')
+          const response = await fetch(url.toString(), {
+            headers: edgeFunctionHeaders(),
+            signal: controller.signal,
+          })
+          if (!response.ok) return null
+          const data = await response.json() as { series?: number[] }
+          const price = data.series?.at(-1)
+          return typeof price === 'number' && Number.isFinite(price) ? [symbol, price] as const : null
+        } catch {
+          return null
+        }
+      }))
+      const priceMap = new Map(priceEntries.filter((entry): entry is readonly [string, number] => entry !== null))
+      if (priceMap.size === 0) return
+      setPriceAlerts((current) => {
+        let changed = false
+        const next = current.map((alert) => {
+          if (!alert.active) return alert
+          const currentPrice = priceMap.get(alert.symbol)
+          if (typeof currentPrice !== 'number' || !Number.isFinite(currentPrice)) return alert
+          const reached = alert.direction === 'above'
+            ? currentPrice >= alert.targetPrice
+            : currentPrice <= alert.targetPrice
+          if (!reached) return alert
+          changed = true
+          return {
+            ...alert,
+            active: false,
+            triggeredAt: new Date().toISOString(),
+            triggeredPrice: formatTriggeredPrice(currentPrice, alert.currency),
+          }
+        })
+        if (changed) setNotificationsOpen(true)
+        return changed ? next : current
+      })
+    }
+
+    void checkRemoteAlerts()
+    const timer = window.setInterval(() => { void checkRemoteAlerts() }, 15_000)
+    return () => {
+      controller.abort()
+      window.clearInterval(timer)
+    }
+  }, [activeAlerts])
+
+  const refreshKnowledgeCards = () => {
+    const currentIds = new Set(knowledgeCards.map((c) => c.id))
+    const pool = allKnowledgeCards.filter((c) => !currentIds.has(c.id))
+    setKnowledgeCards([...pool].sort(() => Math.random() - 0.5).slice(0, 2))
+  }
+
+  const pickDailyQuizAnswer = (answerIndex: number) => {
+    const quiz = dailyQuizzes[dailyQuizIndex]
+    if (!quiz || selectedDailyAnswer !== null || dailyQuizIndex >= dailyQuizzes.length) return
+    setSelectedDailyAnswer(answerIndex)
+    if (answerIndex === quiz.answerIndex) setDailyQuizCorrectCount((c) => c + 1)
+  }
+
+  const isWholeView = active === 'whole'
+  const displayNickname = userProfile?.nickname ?? '민지'
+  const avatarInitial = getAvatarInitial(displayNickname)
+  const prologueOpen = !userProfile
+  const toActionStock = (stock: WatchItem & { sourceStock?: SectorStock }): SectorStock => stock.sourceStock ?? {
+    name: stock.name,
+    symbol: stock.symbol,
+    price: stock.price,
+    change: stock.chg,
+    changePercent: stock.chg,
+    up: stock.up,
+    currency: stock.symbol.endsWith('.KS') || stock.symbol.endsWith('.KQ') ? 'KRW' : 'USD',
+  }
+
+  const createUserProfile = (nickname: string) => {
+    const profile = { nickname }
+    setUserProfile(profile)
+    setPendingFirstTour(true)
+    try { window.localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile)) }
+    catch { /* ignore */ }
+  }
+
+  const goHomeFromLogo = () => {
+    setActive('home')
+    setSearchQuery('')
+    setSearchFocused(false)
+    setNotificationsOpen(false)
+    setSelectedNewsArticle(null)
+    setTourActive(false)
+    setDashboardEditMode(false)
+    window.location.reload()
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className={`app ${beginner ? 'beginner' : 'pro'}`}>
+      {loadingVisible && (
+        <div className="loading-overlay">
+          <div className="loading-bg" />
+          <div className="loading-center">
+            <img src="/charcter/대표_문구.png" alt="대표 문구" className="loading-main-img" />
+            <img src="/charcter/진입_아이콘.png" alt="진입 아이콘" className="loading-icon" />
+          </div>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+      )}
+
+      <aside className="sidebar">
+        <button type="button" className="sidebar-logo-center" onClick={goHomeFromLogo} aria-label="대시보드 홈으로 이동">
+          <img
+            src="/charcter/대표_문구.png"
+            alt="투자 한입 로고"
+            className="sidebar-logo-img"
+          />
         </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className="greet">
+          <div className="greet-hi">안녕하세요</div>
+          <div className="greet-name">{displayNickname}님 👋</div>
+          <div className="greet-meta"><span className="greet-dot" />오늘도 좋은 하루 되세요</div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+        <nav className="nav">
+          <div className="nav-label">Menu</div>
+          {([
+            ['home', '대시보드', 'menu-dashboard'],
+            ['whole', '전체 종목', 'menu-whole'],
+            ['news', '뉴스 & 리포트', 'menu-news'],
+          ] as const).map(([key, label, tourKey]) => (
+            <button key={key} className={`nav-item ${active === key ? 'active' : ''}`} onClick={() => setActive(key)} data-tour={tourKey}>
+              <span className="nav-icon">•</span><span>{label}</span>
+            </button>
+          ))}
+        </nav>
+        <nav className="nav">
+          <div className="nav-label">Tools</div>
+          {active === 'home' && (
+            <>
+              <button className={`nav-item ${dashboardEditMode ? 'active' : ''}`} onClick={() => setDashboardEditMode((v) => !v)} data-tour="tool-dashboard-edit">
+                <span className="nav-icon">🧩</span><span>{dashboardEditMode ? '편집 종료' : '대시보드 편집'}</span>
+              </button>
+              <button className="nav-item" onClick={openPropensity} data-tour="tool-propensity">
+                <span className="nav-icon">✨</span><span>투자성향 분석</span>
+              </button>
+            </>
+          )}
+          <button className="nav-item" onClick={() => { setTourStep(0); setTourActive(true) }} data-tour="tour-btn">
+            <span className="nav-icon">🍙</span><span>가이드 투어</span>
+          </button>
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="sidebar-pick">
+            <div className="know-feature-tag">Today's Pick</div>
+            <div className={`sidebar-pick-content ${pickFading ? 'fading' : ''}`}>
+              <div className="sidebar-pick-emoji">{TODAY_PICKS[pickIndex].emoji}</div>
+              <div className="sidebar-pick-title">{TODAY_PICKS[pickIndex].title}</div>
+              <div className="sidebar-pick-desc">{TODAY_PICKS[pickIndex].desc}</div>
+            </div>
+          </div>
+          <div className="beginner-card">
+            <div className="beginner-row">
+              <div>
+                <div className="beginner-title">Beginner Mode</div>
+                <div className="beginner-sub">{beginner ? '쉬운 설명 표시' : '전문가 모드'}</div>
+              </div>
+              <div className={`toggle ${beginner ? 'on' : ''}`} onClick={() => setBeginner((v) => !v)} role="button" tabIndex={0} data-tour="beginner-toggle">
+                <div className="toggle-knob" />
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      </aside>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <main className="main">
+        <header className="header">
+          <div>
+            <div className="header-title">
+              {active === 'home' ? '대시보드' : active === 'whole' ? '전체 종목' : '뉴스 & 리포트'}
+            </div>
+            <div className="header-date">{marketData.generatedAtLabel}</div>
+          </div>
+          <div className="search">
+            <span className="search-icon">⌕</span>
+            <input
+              value={searchQuery}
+              placeholder="종목명, 티커, 키워드 검색"
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              aria-label="종목 검색"
+              aria-expanded={showSearchSuggestions}
+            />
+            {!searchQuery && <span className="search-kbd">⌘K</span>}
+            {showSearchSuggestions && (
+              <div className="search-suggestions">
+                {searchMatches.length > 0 ? searchMatches.map((stock) => {
+                  const actionStock = toActionStock(stock)
+                  const isWatched = customWatchlist.some((item) => item.symbol === stock.symbol)
+                  return (
+                    <div key={stock.symbol} className="search-suggestion" onMouseDown={(e) => e.preventDefault()}>
+                      <button type="button" className="search-suggestion-pick" onClick={() => handleSearchStockSelect(actionStock)}>
+                        <span className="search-suggestion-main">
+                          <span className="search-suggestion-name">{stock.name}</span>
+                          <span className="search-suggestion-symbol">{stock.symbol}</span>
+                        </span>
+                        <span className="search-suggestion-price">
+                          <span>{stock.price}</span>
+                          <span className={`search-suggestion-change ${stock.up ? 'up' : 'down'}`}>{stock.chg}</span>
+                        </span>
+                      </button>
+                      <div className="search-suggestion-actions">
+                        <button
+                          type="button"
+                          className={`search-action-btn ${isWatched ? 'active' : ''}`}
+                          onClick={() => toggleWatchStock(actionStock)}
+                          aria-label={`${stock.name} ${isWatched ? '관심 해제' : '관심 추가'}`}
+                          title={isWatched ? '관심 해제' : '관심 추가'}
+                        >
+                          {isWatched ? '♥' : '♡'}
+                        </button>
+                        <div className="search-alert-menu">
+                          <button
+                            type="button"
+                            className={`search-action-btn ${searchAlertSymbol === stock.symbol ? 'active' : ''}`}
+                            onClick={() => setSearchAlertSymbol((current) => current === stock.symbol ? null : stock.symbol)}
+                            aria-label={`${stock.name} 가격 알림 설정`}
+                            title="가격 알림"
+                          >
+                            🔔
+                          </button>
+                          {searchAlertSymbol === stock.symbol && (
+                            <div className="search-alert-pop">
+                              <div className="search-alert-title">가격 알림</div>
+                              <div className="search-alert-control">
+                                <select
+                                  value={searchAlertDrafts[stock.symbol]?.direction ?? 'above'}
+                                  onChange={(e) => updateSearchAlertDraft(stock.symbol, { direction: e.target.value as PriceAlertDirection })}
+                                >
+                                  <option value="above">이상</option>
+                                  <option value="below">이하</option>
+                                </select>
+                                <input
+                                  inputMode="decimal"
+                                  placeholder={actionStock.currency === 'KRW' ? '목표가' : 'Target'}
+                                  value={searchAlertDrafts[stock.symbol]?.price ?? ''}
+                                  onChange={(e) => updateSearchAlertDraft(stock.symbol, { price: e.target.value })}
+                                />
+                                <button type="button" onClick={() => submitSearchAlert(actionStock)}>등록</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }) : <div className="search-empty">{searchLoading ? 'Yahoo Finance 검색 중…' : '검색 결과 없음'}</div>}
+              </div>
+            )}
+          </div>
+          <div className="notification-wrap">
+            <button
+              className="header-btn"
+              title="알림"
+              aria-expanded={notificationsOpen}
+              onClick={() => setNotificationsOpen((value) => !value)}
+            >
+              🔔
+              {triggeredAlerts.length > 0 && <span className="badge" />}
+            </button>
+            {notificationsOpen && (
+              <div className="notification-pop">
+                <div className="notification-head">
+                  <div>
+                    <div className="notification-title">가격 알림</div>
+                    <div className="notification-sub">{activeAlerts.length}개 대기 · {triggeredAlerts.length}개 도달</div>
+                  </div>
+                </div>
+                <div className="notification-list">
+                  {priceAlerts.length > 0 ? priceAlerts.map((alert) => (
+                    <div key={alert.id} className={`notification-item ${alert.active ? '' : 'triggered'}`}>
+                      <div>
+                        <div className="notification-stock">{alert.name}</div>
+                        <div className="notification-text">
+                          {alert.symbol} · {alert.direction === 'above' ? '이상' : '이하'} {alert.targetPrice.toLocaleString(alert.currency === 'KRW' ? 'ko-KR' : 'en-US')}
+                          {alert.currency === 'KRW' ? '원' : '달러'}
+                        </div>
+                        {!alert.active && (
+                          <div className="notification-hit">도달가 {alert.triggeredPrice ?? '-'}</div>
+                        )}
+                      </div>
+                      <button className="notification-remove" onClick={() => removePriceAlert(alert.id)}>×</button>
+                    </div>
+                  )) : (
+                    <div className="notification-empty">설정한 가격 알림이 없습니다.</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="user-chip">
+            <div className="user-avatar">{avatarInitial}</div>
+            <span className="user-name">{displayNickname}</span>
+          </div>
+        </header>
+
+        <div className="content">
+          <IndicatorsSection
+            indicators={marketData.indicators}
+            beginner={beginner}
+            setHoverHelp={setHoverHelp}
+          />
+
+          {active === 'news' && (
+            <NewsPage newsData={newsData} onCardClick={setSelectedNewsArticle} />
+          )}
+          {active !== 'news' && isWholeView && (
+            <WholePage
+              watchlistSymbols={customWatchlist.map((item) => item.symbol)}
+              priceAlerts={priceAlerts}
+              onToggleWatch={toggleWatchStock}
+              onAddPriceAlert={addPriceAlert}
+              onPricesUpdate={checkPriceAlerts}
+              onSectorDataLoad={setSectorStocks}
+            />
+          )}
+          {active !== 'news' && !isWholeView && (
+            <DashboardPage
+              marketData={dashboardMarketData}
+              beginner={beginner}
+              selectedWatchItem={selectedWatchItem}
+              propensityResult={propensityResult}
+              analysisLoading={propensityAnalysisLoading}
+              hiddenWidgets={hiddenWidgets}
+              dashboardEditMode={dashboardEditMode}
+              knowledgeCards={knowledgeCards}
+              dailyQuizzes={dailyQuizzes}
+              dailyQuizIndex={dailyQuizIndex}
+              selectedDailyAnswer={selectedDailyAnswer}
+              dailyQuizCorrectCount={dailyQuizCorrectCount}
+              setHoverHelp={setHoverHelp}
+              setSelectedWatchItem={setSelectedWatchItem}
+              onNavigateToNews={() => setActive('news')}
+              onRestartSurvey={openPropensity}
+              onToggleWidget={toggleDashboardWidget}
+              onRefreshKnowledge={refreshKnowledgeCards}
+              onPickQuizAnswer={pickDailyQuizAnswer}
+              onNextQuiz={() => { setDailyQuizIndex((i) => i + 1); setSelectedDailyAnswer(null) }}
+              onRestartQuiz={() => { setDailyQuizIndex(0); setSelectedDailyAnswer(null); setDailyQuizCorrectCount(0) }}
+            />
+          )}
+        </div>
+      </main>
+
+      {selectedNewsArticle && (
+        <NewsDetailModal article={selectedNewsArticle} onClose={() => setSelectedNewsArticle(null)} />
+      )}
+      <SectionHelpTooltip help={hoverHelp} />
+      {prologueOpen && <PrologueModal onCreateProfile={createUserProfile} />}
+      <TourOverlay
+        active={tourActive && !prologueOpen}
+        step={safeTourStep}
+        steps={visibleTourSteps}
+        onNext={() => {
+          if (safeTourStep >= visibleTourSteps.length - 1) { setTourActive(false); return }
+          setTourStep((v) => v + 1)
+        }}
+        onSkip={() => setTourActive(false)}
+      />
+      <SurveyModal
+        open={propensityOpen}
+        step={propensityStep}
+        answers={propensityAnswers}
+        onPick={pickPropensityAnswer}
+        onPrev={() => setPropensityStep((s) => Math.max(0, s - 1))}
+        onNext={nextPropensityStep}
+        onClose={closePropensity}
+      />
+    </div>
   )
 }
 

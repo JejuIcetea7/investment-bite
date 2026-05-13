@@ -1,0 +1,134 @@
+{
+  "generatedAt": "2026-05-12T00:00:00.000Z",
+  "generatedAtLabel": "Supabase 연결 전 로컬 예시 데이터",
+  "sectors": [
+    {
+      "key": "AI",
+      "label": "AI",
+      "stocks": [
+        { "name": "NVIDIA", "symbol": "NVDA", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Microsoft", "symbol": "MSFT", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Alphabet", "symbol": "GOOGL", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Amazon", "symbol": "AMZN", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Meta Platforms", "symbol": "META", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Palantir", "symbol": "PLTR", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "AMD", "symbol": "AMD", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Broadcom", "symbol": "AVGO", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Oracle", "symbol": "ORCL", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "IBM", "symbol": "IBM", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" }
+      ]
+    },
+    {
+      "key": "반도체",
+      "label": "반도체",
+      "stocks": [
+        { "name": "NVIDIA", "symbol": "NVDA", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "TSMC", "symbol": "TSM", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Broadcom", "symbol": "AVGO", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "ASML", "symbol": "ASML", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "AMD", "symbol": "AMD", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Qualcomm", "symbol": "QCOM", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Intel", "symbol": "INTC", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Micron", "symbol": "MU", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Texas Instruments", "symbol": "TXN", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Applied Materials", "symbol": "AMAT", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" }
+      ]
+    },
+    {
+      "key": "조선",
+      "label": "조선",
+      "stocks": [
+        { "name": "HD현대중공업", "symbol": "329180.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "한화오션", "symbol": "042660.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "삼성중공업", "symbol": "010140.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "HD한국조선해양", "symbol": "009540.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "현대미포조선", "symbol": "010620.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "HJ중공업", "symbol": "097230.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "HD현대마린엔진", "symbol": "071970.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "STX엔진", "symbol": "077970.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "HD현대", "symbol": "267250.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" },
+        { "name": "HMM", "symbol": "011200.KS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "KRW" }
+      ]
+    },
+    {
+      "key": "에너지",
+      "label": "에너지",
+      "stocks": [
+        { "name": "Exxon Mobil", "symbol": "XOM", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Chevron", "symbol": "CVX", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "ConocoPhillips", "symbol": "COP", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Shell", "symbol": "SHEL", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "TotalEnergies", "symbol": "TTE", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "BP", "symbol": "BP", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Schlumberger", "symbol": "SLB", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "NextEra Energy", "symbol": "NEE", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Enphase Energy", "symbol": "ENPH", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "First Solar", "symbol": "FSLR", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" }
+      ]
+    },
+    {
+      "key": "헬스",
+      "label": "헬스",
+      "stocks": [
+        { "name": "UnitedHealth", "symbol": "UNH", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Eli Lilly", "symbol": "LLY", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Johnson & Johnson", "symbol": "JNJ", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Merck", "symbol": "MRK", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "AbbVie", "symbol": "ABBV", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Pfizer", "symbol": "PFE", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Thermo Fisher", "symbol": "TMO", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Abbott", "symbol": "ABT", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Intuitive Surgical", "symbol": "ISRG", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Medtronic", "symbol": "MDT", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" }
+      ]
+    },
+    {
+      "key": "우주",
+      "label": "우주",
+      "stocks": [
+        { "name": "Rocket Lab", "symbol": "RKLB", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Intuitive Machines", "symbol": "LUNR", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "AST SpaceMobile", "symbol": "ASTS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Virgin Galactic", "symbol": "SPCE", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Boeing", "symbol": "BA", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Lockheed Martin", "symbol": "LMT", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Northrop Grumman", "symbol": "NOC", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "RTX", "symbol": "RTX", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Iridium", "symbol": "IRDM", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "EchoStar", "symbol": "SATS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" }
+      ]
+    },
+    {
+      "key": "바이오",
+      "label": "바이오",
+      "stocks": [
+        { "name": "Amgen", "symbol": "AMGN", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Gilead Sciences", "symbol": "GILD", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Regeneron", "symbol": "REGN", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Vertex", "symbol": "VRTX", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Moderna", "symbol": "MRNA", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "BioNTech", "symbol": "BNTX", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Biogen", "symbol": "BIIB", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Illumina", "symbol": "ILMN", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "CRISPR Therapeutics", "symbol": "CRSP", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Alnylam", "symbol": "ALNY", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" }
+      ]
+    },
+    {
+      "key": "방산",
+      "label": "방산",
+      "stocks": [
+        { "name": "Lockheed Martin", "symbol": "LMT", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "RTX", "symbol": "RTX", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Northrop Grumman", "symbol": "NOC", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "General Dynamics", "symbol": "GD", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Boeing", "symbol": "BA", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "L3Harris", "symbol": "LHX", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Huntington Ingalls", "symbol": "HII", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "TransDigm", "symbol": "TDG", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "HEICO", "symbol": "HEI", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" },
+        { "name": "Kratos Defense", "symbol": "KTOS", "price": "N/A", "change": "N/A", "changePercent": "N/A", "up": true, "currency": "USD" }
+      ]
+    }
+  ]
+}

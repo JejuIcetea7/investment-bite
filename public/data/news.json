@@ -1,0 +1,368 @@
+{
+  "generatedAt": "2026-05-11T04:44:07.040Z",
+  "topNews": [
+    {
+      "title": "코스피 6000 시대의 저력… 신한투자증권 \"개인 투자자 80%가 수익 냈다...",
+      "description": "중동발 지정학적 위기 속에서도 국내 주식 시장에 참여한 개인 투자자 10명 중 8명이 수익을 거둔 것으로... ◆ 삼성전자가 효자이자 불효자… 반도체·원전·방산 대형주가 증시 주도 유가증권시장(KOSPI)에서...",
+      "link": "http://www.ttlnews.com/news/articleView.html?idxno=3106740",
+      "source": "ttlnews.com",
+      "date": "2026-05-11T04:42:00.000Z",
+      "aiSummary": "중동발 지정학적 위기 속에서도 국내 주식 시장에 참여한 개인 투자자 10명 중 8명이 수익을 거둔 것으로... ◆ 삼성전자가 효자이자 불효자… 반도체·원전·방산 대형주가 증시 주도 유가증권시장(KOSPI)에서...",
+      "sentiment": "neutral",
+      "sentimentScore": 0,
+      "keywords": [],
+      "stocks": []
+    },
+    {
+      "title": "휴림로봇, 코스닥 반등에도 약세 흐름 왜?…장중 1만2550원대로 밀려",
+      "description": "미국 증시에서도 AI와 자동화 관련 기업 중심의 강세 흐름이 이어지고 있어 국내 로봇주 역시 수급 변화에... 주식시장은 높은 변동성을 동반할 수 있으며 투자에 따른 손실은 투자자 본인의 책임입니다. 투자 결정 전...",
+      "link": "https://www.cbci.co.kr/news/articleView.html?idxno=573623",
+      "source": "cbci.co.kr",
+      "date": "2026-05-11T04:38:00.000Z",
+      "aiSummary": "미국 증시에서도 AI와 자동화 관련 기업 중심의 강세 흐름이 이어지고 있어 국내 로봇주 역시 수급 변화에... 주식시장은 높은 변동성을 동반할 수 있으며 투자에 따른 손실은 투자자 본인의 책임입니다. 투자 결정 전...",
+      "sentiment": "neutral",
+      "sentimentScore": 0,
+      "keywords": [],
+      "stocks": []
+    },
+    {
+      "title": "[직설] 트럼프 \"이란 종전안 용납 불가\"…전쟁 상황과 주식 시장 상황은...",
+      "description": "국내 증시에도 부담으로 작용하진 않을지 투자자들의 고민이 나오고 있는데요. 지수와 투심은 그 어느 때보다 뜨겁지만, 갈수록 어려운 장세로 흘러가고 있는 분위깁니다. 그럼, 이란 전쟁 상황과 주식시장 상황까지 두루...",
+      "link": "https://biz.sbs.co.kr/article_hub/20000309405?division=NAVER",
+      "source": "biz.sbs.co.kr",
+      "date": "2026-05-11T04:38:00.000Z",
+      "aiSummary": "국내 증시에도 부담으로 작용하진 않을지 투자자들의 고민이 나오고 있는데요. 지수와 투심은 그 어느 때보다 뜨겁지만, 갈수록 어려운 장세로 흘러가고 있는 분위깁니다. 그럼, 이란 전쟁 상황과 주식시장 상황까지 두루...",
+      "sentiment": "neutral",
+      "sentimentScore": 0,
+      "keywords": [],
+      "stocks": []
+    }
+  ],
+  "sectorNews": {
+    "AI": [
+      {
+        "title": "자회사 퀀텀플럭스와 시너지…우리로, 양자·라이다 업고 '광속 질주'",
+        "description": "인공지능(AI) 인프라 확대와 데이터센터 투자 기대감이 커지면서 광통신과 서버, 산업용 단말기 관련... AI PC 시장 확대와 고사양 그래픽카드 수요 증가 전망이 투자심리를 자극하는 분위기다. 엔비디아 중심의 글로벌 AI...",
+        "link": "https://www.pinpointnews.co.kr/news/articleView.html?idxno=451804",
+        "source": "pinpointnews.co.kr",
+        "date": "2026-05-11T04:34:00.000Z",
+        "aiSummary": "인공지능(AI) 인프라 확대와 데이터센터 투자 기대감이 커지면서 광통신과 서버, 산업용 단말기 관련... AI PC 시장 확대와 고사양 그래픽카드 수요 증가 전망이 투자심리를 자극하는 분위기다. 엔비디아 중심의 글로벌 AI...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "[특징주] 머큐리, AI 데이터센터 광통신 특수·방산 영토 확장에 13%대 강...",
+        "description": "머큐리가 인공지능(AI) 데이터센터 확산에 따른 광통신 인프라 수요 급증과 국방·드론 등 신사업 진출... 최근 AI 데이터센터 증설 붐으로 관련 공장이 100% 가동 중인 것으로 알려졌다. 여기에 엔비디아의 광반도체 기술...",
+        "link": "https://www.widedaily.com/news/articleView.html?idxno=293747",
+        "source": "widedaily.com",
+        "date": "2026-05-11T04:30:00.000Z",
+        "aiSummary": "머큐리가 인공지능(AI) 데이터센터 확산에 따른 광통신 인프라 수요 급증과 국방·드론 등 신사업 진출... 최근 AI 데이터센터 증설 붐으로 관련 공장이 100% 가동 중인 것으로 알려졌다. 여기에 엔비디아의 광반도체 기술...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "허니웰의 양자컴 기업 '퀀티넘' IPO 신청",
+        "description": "양자컴퓨터는 인공지능에 필요한 컴퓨팅 성능을 비약적으로 끌어올릴 잠재력을 가진 기술로 평가된다.... 양자컴퓨팅 관련주는 AI 열풍을 타고 가파른 상승세를 보였다. 디웨이브 퀀텀 주가는 전년 800% 이상 급등한 데...",
+        "link": "https://www.naeil.com/news/read/588207?ref=naver",
+        "source": "naeil.com",
+        "date": "2026-05-11T04:06:00.000Z",
+        "aiSummary": "양자컴퓨터는 인공지능에 필요한 컴퓨팅 성능을 비약적으로 끌어올릴 잠재력을 가진 기술로 평가된다.... 양자컴퓨팅 관련주는 AI 열풍을 타고 가파른 상승세를 보였다. 디웨이브 퀀텀 주가는 전년 800% 이상 급등한 데...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      }
+    ],
+    "반도체": [
+      {
+        "title": "[ET특징주] 190만원선 뚫고 고공행진…SK하이닉스, 주가 13% 급등",
+        "description": "메모리 가격 급등 수혜 지속 전망으로 국내 반도체 대표주인 SK하이닉스와 삼성전자가 강세다. 11일 오후 1시 31분 기준 SK하이닉스(000660) 주가는 전 거래일 대비 13.40% 상승한 191만 2000원에 거래되고 있다. 장중...",
+        "link": "https://www.etnews.com/20260511000279",
+        "source": "etnews.com",
+        "date": "2026-05-11T04:39:00.000Z",
+        "aiSummary": "메모리 가격 급등 수혜 지속 전망으로 국내 반도체 대표주인 SK하이닉스와 삼성전자가 강세다. 11일 오후 1시 31분 기준 SK하이닉스(000660) 주가는 전 거래일 대비 13.40% 상승한 191만 2000원에 거래되고 있다. 장중...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "[티타임] 외인 2.9조 털었지만…코스피 7860선 강세, 환율 1474.80원",
+        "description": "대형주와 반도체 종목을 대규모 순매수하며 삼성전자·SK하이닉스를 비롯해 코스피가 급등하고 있다\"고 짚었다. 이어 \"지난 주말 마이크론과 AI(인공지능) 최적화 고성능 SSDS를 출시한 샌디스크의 주가가...",
+        "link": "https://www.sidae.com/article/2026051112422828323",
+        "source": "sidae.com",
+        "date": "2026-05-11T04:39:00.000Z",
+        "aiSummary": "대형주와 반도체 종목을 대규모 순매수하며 삼성전자·SK하이닉스를 비롯해 코스피가 급등하고 있다\"고 짚었다. 이어 \"지난 주말 마이크론과 AI(인공지능) 최적화 고성능 SSDS를 출시한 샌디스크의 주가가...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "한국도 미국도 반도체만 오른다...\"차익실현? 오늘이 가장 싸다\"",
+        "description": "코스피 지수가 연일 고공행진을 펼치고 있는 가운데, 삼성전자와 SK하이닉스 등 반도체 주식이 랠리를... 물론 이미 주가가 많이 올랐지만, 놀라운 이익 개선으로 밸류에이션 상에서는 오히려 저렴한 주식이라고 볼 수...",
+        "link": "http://www.opinionnews.co.kr/news/articleView.html?idxno=138193",
+        "source": "opinionnews.co.kr",
+        "date": "2026-05-11T04:30:00.000Z",
+        "aiSummary": "코스피 지수가 연일 고공행진을 펼치고 있는 가운데, 삼성전자와 SK하이닉스 등 반도체 주식이 랠리를... 물론 이미 주가가 많이 올랐지만, 놀라운 이익 개선으로 밸류에이션 상에서는 오히려 저렴한 주식이라고 볼 수...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      }
+    ],
+    "조선": [
+      {
+        "title": "삼성중공업 주가 장중 6%대 올라, 한-미 협력 기대감에 조선주 강세",
+        "description": "같은시각 HD한국조선해양(5.75%) 한화오션(4.12%) HD현대중공업(4.1%) 등 다른 조선주 주가도 오르고 있다. 한국과 미국의 조선 협력 강화 소식에 조선주 투자심리가 개선된 것으로 보인다. 8일(현지시각) 한국과...",
+        "link": "https://www.businesspost.co.kr/BP?command=article_view&num=437468",
+        "source": "businesspost.co.kr",
+        "date": "2026-05-11T02:14:00.000Z",
+        "aiSummary": "같은시각 HD한국조선해양(5.75%) 한화오션(4.12%) HD현대중공업(4.1%) 등 다른 조선주 주가도 오르고 있다. 한국과 미국의 조선 협력 강화 소식에 조선주 투자심리가 개선된 것으로 보인다. 8일(현지시각) 한국과...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "수주 물량 터졌다... 동방선기, 파이프 스풀 앞세워 '실적 잭팟' 예고",
+        "description": "한화엔진은 1.64% 내린 7만8100원에 거래중이다. 시장에서는 엔진 사업 성장 기대는 유지되지만 최근 주가 급등에 따른 밸류에이션 부담이 단기 조정으로 이어진 것으로 보고 있다. STX엔진과 HD현대마린엔진 역시 비슷한...",
+        "link": "https://www.pinpointnews.co.kr/news/articleView.html?idxno=451768",
+        "source": "pinpointnews.co.kr",
+        "date": "2026-05-11T01:46:00.000Z",
+        "aiSummary": "한화엔진은 1.64% 내린 7만8100원에 거래중이다. 시장에서는 엔진 사업 성장 기대는 유지되지만 최근 주가 급등에 따른 밸류에이션 부담이 단기 조정으로 이어진 것으로 보고 있다. STX엔진과 HD현대마린엔진 역시 비슷한...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "[특징주] 조선주, '한미 조선 파트너십 이니셔티브' 출범.. 동반 '강세'",
+        "description": "11일 한국거래소에 따르면 오전 10시 6분 HD한국조선해양은 6.14% 상승한 47만9750원에 거래되고 있다. 삼성중공업은 전 거래일 대비 7.04% 상승한 3만4200원을 기록중이다. 한화오션(4.84%), HD현대중공업(3.80%), HJ중공업...",
+        "link": "https://www.g-enews.com/view.php?ud=20260511100501635244093b5d4e_1",
+        "source": "g-enews.com",
+        "date": "2026-05-11T01:42:00.000Z",
+        "aiSummary": "11일 한국거래소에 따르면 오전 10시 6분 HD한국조선해양은 6.14% 상승한 47만9750원에 거래되고 있다. 삼성중공업은 전 거래일 대비 7.04% 상승한 3만4200원을 기록중이다. 한화오션(4.84%), HD현대중공업(3.80%), HJ중공업...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      }
+    ],
+    "에너지": [
+      {
+        "title": "삼전닉스 외 대안은 건설·원전·바이오",
+        "description": "그러면서 운영사(한국전력 등)보다 설계·조달·시공(EPC) 기업을 주목한다고 밝혔다. 운영사의 경우 요금 규제 등 변수가 있어 업황이 주가에 즉각 반영되기 어렵다는 설명이다. JP모건은 해당 보고서에서...",
+        "link": "https://www.mk.co.kr/article/12026399",
+        "source": "mk.co.kr",
+        "date": "2026-04-27T12:01:00.000Z",
+        "aiSummary": "그러면서 운영사(한국전력 등)보다 설계·조달·시공(EPC) 기업을 주목한다고 밝혔다. 운영사의 경우 요금 규제 등 변수가 있어 업황이 주가에 즉각 반영되기 어렵다는 설명이다. JP모건은 해당 보고서에서...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "호르무즈 쇼크의 역설…원전·전기차 몸값 뛴다",
+        "description": "에너지도 강하게 성장하고, 전기차도 수혜를 입을 것\"이라고 전망했다. 호르무즈 해협 봉쇄와 중동 정유시설... 한편 한국의 경우 한국전력은  베트남 국영 에너지기업 페트로베트남(PVN)과 신규 원전 개발 협력 가능성을...",
+        "link": "http://www.smedaily.co.kr/news/articleView.html?idxno=356136",
+        "source": "smedaily.co.kr",
+        "date": "2026-04-24T00:40:00.000Z",
+        "aiSummary": "에너지도 강하게 성장하고, 전기차도 수혜를 입을 것\"이라고 전망했다. 호르무즈 해협 봉쇄와 중동 정유시설... 한편 한국의 경우 한국전력은  베트남 국영 에너지기업 페트로베트남(PVN)과 신규 원전 개발 협력 가능성을...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "서학개미 10개월 만에 美주식 순매도…반도체 다음 주도주 찾기 나선다",
+        "description": "시장의 관심은 이제 반도체를 넘어 다음 주도주가 어디로 확산할지로 옮겨가고 있다. 22일 예탁결제원에... 에너지화학은 정유·에너지 쪽 이익 가시성이 상대적으로 높고, 전력설비는 가격 흐름이 종목 전반으로...",
+        "link": "https://www.etoday.co.kr/news/view/2578098",
+        "source": "etoday.co.kr",
+        "date": "2026-04-22T09:32:00.000Z",
+        "aiSummary": "시장의 관심은 이제 반도체를 넘어 다음 주도주가 어디로 확산할지로 옮겨가고 있다. 22일 예탁결제원에... 에너지화학은 정유·에너지 쪽 이익 가시성이 상대적으로 높고, 전력설비는 가격 흐름이 종목 전반으로...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      }
+    ],
+    "헬스": [
+      {
+        "title": "드림씨아이에스, 중국 1위 타이거메드와 협력… 국내 벤처 해외 진출 가...",
+        "description": "씨엑스아이와 온코닉테라퓨틱스, 동국제약도 각각 건강기능식품과 항암·헬스케어 사업 성장 기대감이... 대형주는 셀트리온·삼성바이오로직스·유한양행 중심의 안정성이 부각되고, 중소형주는 보로노이...",
+        "link": "https://www.pinpointnews.co.kr/news/articleView.html?idxno=451061",
+        "source": "pinpointnews.co.kr",
+        "date": "2026-05-07T05:54:00.000Z",
+        "aiSummary": "씨엑스아이와 온코닉테라퓨틱스, 동국제약도 각각 건강기능식품과 항암·헬스케어 사업 성장 기대감이... 대형주는 셀트리온·삼성바이오로직스·유한양행 중심의 안정성이 부각되고, 중소형주는 보로노이...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "코스피 7500 질주 속 숨고르는 K바이오…옥석가리기 본격화",
+        "description": "◆바이오주 시장 기대감 못미치며 일시적 조정 국면 맞아 반면 삼성바이오로직스, 셀트리온, 유한양행, SK바이오팜, 에이비엘바이오 등 주요 제약·바이오 기업이 묶여있는 KRX 헬스케어 지수는 전날 4658.66에 마감해...",
+        "link": "https://www.ebn.co.kr/news/articleView.html?idxno=1707864",
+        "source": "ebn.co.kr",
+        "date": "2026-05-07T05:30:00.000Z",
+        "aiSummary": "◆바이오주 시장 기대감 못미치며 일시적 조정 국면 맞아 반면 삼성바이오로직스, 셀트리온, 유한양행, SK바이오팜, 에이비엘바이오 등 주요 제약·바이오 기업이 묶여있는 KRX 헬스케어 지수는 전날 4658.66에 마감해...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "셀트리온 주가 전 거래일 대비 3.75% 상승…1분기 실적 개선",
+        "description": "셀트리온은 바이오의약품을 중심으로 자가면역질환과 종양 치료제를 개발·판매하는 글로벌... 헬스케어와 합병해 생산·판매 통합 법인 체제를 구축했다. 7일 13시 한국거래소 기준 셀트리온 주가는 전...",
+        "link": "https://www.topstarnews.net/news/articleView.html?idxno=16054115",
+        "source": "topstarnews.net",
+        "date": "2026-05-07T04:58:00.000Z",
+        "aiSummary": "셀트리온은 바이오의약품을 중심으로 자가면역질환과 종양 치료제를 개발·판매하는 글로벌... 헬스케어와 합병해 생산·판매 통합 법인 체제를 구축했다. 7일 13시 한국거래소 기준 셀트리온 주가는 전...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      }
+    ],
+    "우주": [
+      {
+        "title": "발사체 골격 만들던 KAI, 6G 위성 본체 설계로 올라섰다",
+        "description": "한국항공우주(KAI)의 기업가치 변화를 설명할 때 방산 항공기 수출만으로는 부족하다. KAI가 장기적으로... KAI는 한화에어로스페이스와 함께 체계종합 주관 자격으로 사업에 참여했다. 구조물을 제작하는 역할에서...",
+        "link": "http://www.newsroad.co.kr/news/articleView.html?idxno=59171",
+        "source": "newsroad.co.kr",
+        "date": "2026-05-11T04:16:00.000Z",
+        "aiSummary": "한국항공우주(KAI)는 한화에어로스페이스와 협력하여 6G 위성 본체 설계에 참여하며 기업가치를 높이고 있다.",
+        "sentiment": "positive",
+        "sentimentScore": 0.8,
+        "keywords": [
+          "한국항공우주",
+          "6G 위성",
+          "한화에어로스페이스"
+        ],
+        "stocks": [
+          "KAI",
+          "한화에어로스페이스"
+        ]
+      },
+      {
+        "title": "[재계 인사이드] 한화를 재계 5위로 만든 ‘모순(矛盾)의 상술(商術)’",
+        "description": "주가는 올해 들어 130만원대로 4배 이상 올랐다. 이로인해 폭증한 시가총액, 그룹 보유 주식의 자산가치가 급증한 것이다. 최근 방산업계를 넘어 재계에서는 한화에어로스페이스의 국내 3대 방산업체인 한국우주항공...",
+        "link": "https://www.news2day.co.kr/article/20260510500019",
+        "source": "news2day.co.kr",
+        "date": "2026-05-10T01:28:00.000Z",
+        "aiSummary": "한화는 주가 상승으로 인해 시가총액과 자산가치가 급증하며 재계 5위로 올라섰다. 방산업계에서의 성과가 주목받고 있다.",
+        "sentiment": "positive",
+        "sentimentScore": 0.9,
+        "keywords": [
+          "한화",
+          "시가총액",
+          "방산업계"
+        ],
+        "stocks": [
+          "한화",
+          "한화에어로스페이스"
+        ]
+      },
+      {
+        "title": "한국항공우주, 위성·KF-21로 방산 수익구조 시험대",
+        "description": "한화에어로스페이스의 KAI 지분 확대도 산업 구조 변화와 맞물려 해석되고 있다. 금융감독원... 한국항공우주는 산업 변화의 중심에 있지만, 주가가 이미 52주 최저가 대비 두 배 이상 오른 만큼 향후 실적 확인...",
+        "link": "https://www.topstarnews.net/news/articleView.html?idxno=16056537",
+        "source": "topstarnews.net",
+        "date": "2026-05-09T23:08:00.000Z",
+        "aiSummary": "한국항공우주는 위성과 KF-21을 통해 방산 수익구조를 시험하고 있으며, 주가는 이미 크게 상승한 상태이다.",
+        "sentiment": "neutral",
+        "sentimentScore": 0.5,
+        "keywords": [
+          "한국항공우주",
+          "위성",
+          "KF-21"
+        ],
+        "stocks": [
+          "KAI",
+          "한화에어로스페이스"
+        ]
+      }
+    ],
+    "바이오": [
+      {
+        "title": "삼성에피스, 신약 임상 본격화에 실적 체력 시험대",
+        "description": "실적 지속 가능성은 유럽·미국 바이오시밀러 판매 확대에 달려 있고, 성장 사업 수익화는 ADC 임상 진전과 차세대 플랫폼의 사업화 속도에 좌우된다. 주가가 52주 최저가 대비 56.84% 높은 만큼, 신약 뉴스만으로...",
+        "link": "https://www.topstarnews.net/news/articleView.html?idxno=16057317",
+        "source": "topstarnews.net",
+        "date": "2026-05-11T04:16:00.000Z",
+        "aiSummary": "실적 지속 가능성은 유럽·미국 바이오시밀러 판매 확대에 달려 있고, 성장 사업 수익화는 ADC 임상 진전과 차세대 플랫폼의 사업화 속도에 좌우된다. 주가가 52주 최저가 대비 56.84% 높은 만큼, 신약 뉴스만으로...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "에이비엘바이오,12만 원대로 밀려...기술력 평가 촉각",
+        "description": "대형 제약사의 전략적 투자를 받은 사례는 제한적이기 때문이다. IBK투자증권은 또 다른 핵심 플랫폼인 '그랩바디-T(Grabody-T)' 경쟁력에도 주목했다. 에이비엘바이오의 파이프라인인 ABL111이 위암 1차 치료 임상에서...",
+        "link": "https://www.cbci.co.kr/news/articleView.html?idxno=573592",
+        "source": "cbci.co.kr",
+        "date": "2026-05-11T02:16:00.000Z",
+        "aiSummary": "대형 제약사의 전략적 투자를 받은 사례는 제한적이기 때문이다. IBK투자증권은 또 다른 핵심 플랫폼인 '그랩바디-T(Grabody-T)' 경쟁력에도 주목했다. 에이비엘바이오의 파이프라인인 ABL111이 위암 1차 치료 임상에서...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "네오이뮨텍 '선택과 집중' 이면엔 자체 임상 축소…'ARS·CAR-T 병용'만 남...",
+        "description": "하지만 이데일리 제약·바이오 프리미엄 콘텐츠 팜이데일리의 취재 결과 이는 선택과 집중보다 사실상 남아있는 회사 주도 임상이 제한적인 데 따른 불가피한 전략이었던 것으로 해석된다. (그래픽=이데일리...",
+        "link": "http://www.edaily.co.kr/news/newspath.asp?newsid=02194326645447936",
+        "source": "edaily.co.kr",
+        "date": "2026-05-10T23:32:00.000Z",
+        "aiSummary": "하지만 이데일리 제약·바이오 프리미엄 콘텐츠 팜이데일리의 취재 결과 이는 선택과 집중보다 사실상 남아있는 회사 주도 임상이 제한적인 데 따른 불가피한 전략이었던 것으로 해석된다. (그래픽=이데일리...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      }
+    ],
+    "방산": [
+      {
+        "title": "코스피, 1만 넘어 2만도 바라본다 [홍길용의 화식열전]",
+        "description": "방산에서는 한화에어로스페이스, LIG넥스원, 한국항공우주가 글로벌 시장에서 급부상하고 있다. 2차전지의... 한국 대표 기업을 세계 자본시장의 가격결정 시스템 안으로 편입시키는 일이다. 이재명 정부의...",
+        "link": "https://biz.heraldcorp.com/article/10734719?ref=naver",
+        "source": "biz.heraldcorp.com",
+        "date": "2026-05-10T15:02:00.000Z",
+        "aiSummary": "방산에서는 한화에어로스페이스, LIG넥스원, 한국항공우주가 글로벌 시장에서 급부상하고 있다. 2차전지의... 한국 대표 기업을 세계 자본시장의 가격결정 시스템 안으로 편입시키는 일이다. 이재명 정부의...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "[더벨]KAI 민영화설에 SI·FI 분주, 한화 견제론도 변수로",
+        "description": "◇인수 노리는 SI·FI들, 이미 물밑 작업 시작 LIG D&A(전 LIG넥스원)도 유력한 전략적 후보로 거론된다. LIG D&A는 유도무기와 전자전, 감시정찰 분야에 강점을 가진 방산업체다. 반면 한화그룹과 비교하면 항공 플랫폼...",
+        "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605060914002780105244",
+        "source": "thebell.co.kr",
+        "date": "2026-05-07T22:32:00.000Z",
+        "aiSummary": "◇인수 노리는 SI·FI들, 이미 물밑 작업 시작 LIG D&A(전 LIG넥스원)도 유력한 전략적 후보로 거론된다. LIG D&A는 유도무기와 전자전, 감시정찰 분야에 강점을 가진 방산업체다. 반면 한화그룹과 비교하면 항공 플랫폼...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      },
+      {
+        "title": "한화에어로, KAI 인수전 시동…경쟁자 LIG는 현금 부족한데 '4.2조원 실탄...",
+        "description": "(옛 LIG넥스원)의 현금성 자산이 최근 1년 동안 80% 이상 줄어든 것과 큰 차이가 있다. 또한 최근 KAI의 실적과 주가가 다소 회복되면서 민영화 논의가 탄력을 받을 수 있는 시점이라는 분석도 나온다. 결국 한화그룹이...",
+        "link": "http://www.fieldnews.kr/news/articleView.html?idxno=28414",
+        "source": "fieldnews.kr",
+        "date": "2026-05-07T06:18:00.000Z",
+        "aiSummary": "(옛 LIG넥스원)의 현금성 자산이 최근 1년 동안 80% 이상 줄어든 것과 큰 차이가 있다. 또한 최근 KAI의 실적과 주가가 다소 회복되면서 민영화 논의가 탄력을 받을 수 있는 시점이라는 분석도 나온다. 결국 한화그룹이...",
+        "sentiment": "neutral",
+        "sentimentScore": 0,
+        "keywords": [],
+        "stocks": []
+      }
+    ]
+  }
+}
