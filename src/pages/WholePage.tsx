@@ -40,12 +40,14 @@ export default function WholePage({
   onToggleWatch,
   onAddPriceAlert,
   onPricesUpdate,
+  onSectorDataLoad,
 }: {
   watchlistSymbols: string[]
   priceAlerts: PriceAlert[]
   onToggleWatch: (stock: SectorStock) => void
   onAddPriceAlert: (stock: SectorStock, targetPrice: number, direction: PriceAlertDirection) => void
   onPricesUpdate: (stocks: SectorStock[]) => void
+  onSectorDataLoad?: (stocks: SectorStock[]) => void
 }) {
   const [sectorData, setSectorData] = useState<SectorStocksData | null>(null)
   const [activeSectorKey, setActiveSectorKey] = useState<NewsSectorKey | null>(null)
@@ -84,7 +86,9 @@ export default function WholePage({
         const data = await fetchSectorStocks(controller.signal)
         if (!ignore) {
           setSectorData(data)
-          onPricesUpdate(data.sectors.flatMap((sector) => sector.stocks))
+          const allStocks = data.sectors.flatMap((sector) => sector.stocks)
+          onPricesUpdate(allStocks)
+          onSectorDataLoad?.(allStocks)
           setActiveSectorKey((current) => current ?? data.sectors[0]?.key ?? null)
           setError(false)
         }
@@ -93,7 +97,9 @@ export default function WholePage({
           const fallback = await fetchFallbackSectorStocks(controller.signal)
           if (!ignore) {
             setSectorData(fallback)
-            onPricesUpdate(fallback.sectors.flatMap((sector) => sector.stocks))
+            const allStocks = fallback.sectors.flatMap((sector) => sector.stocks)
+            onPricesUpdate(allStocks)
+            onSectorDataLoad?.(allStocks)
             setActiveSectorKey((current) => current ?? fallback.sectors[0]?.key ?? null)
             setError(!hasSupabaseConfig)
           }
