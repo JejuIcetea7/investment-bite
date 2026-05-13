@@ -2848,6 +2848,14 @@ html { scroll-behavior: smooth; }
   .whole-panel { grid-column: 1 / -1; }
   .indicators-grid { grid-template-columns: repeat(3, 1fr); }
   .whole-sector-list { grid-template-columns: 1fr; }
+  .news-section-split.show-preview {
+    grid-template-columns: 1fr;
+  }
+  .news-page-preview {
+    position: relative;
+    top: auto;
+    height: 64vh;
+  }
 }
 
 @media (max-width: 760px) {
@@ -3149,6 +3157,7 @@ html { scroll-behavior: smooth; }
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .news-card {
@@ -3162,6 +3171,10 @@ html { scroll-behavior: smooth; }
   flex-direction: column;
   gap: 10px;
   outline: none;
+}
+.news-card.preview-active {
+  border-color: var(--point);
+  background: var(--point-soft);
 }
 .news-card:hover {
   border-color: var(--point);
@@ -3213,6 +3226,104 @@ html { scroll-behavior: smooth; }
   color: var(--point-deep);
   white-space: nowrap;
   flex-shrink: 0;
+}
+.news-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.news-page-view-btn {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.news-page-view-btn:hover,
+.news-page-view-btn.active {
+  border-color: var(--point);
+  background: var(--point);
+  color: var(--accent);
+}
+.news-section-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.news-section-split.show-preview {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 1fr);
+}
+.news-page-preview {
+  position: sticky;
+  top: 88px;
+  height: min(72vh, 760px);
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+}
+.news-page-preview-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.news-page-preview-source {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.news-page-preview-title {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-page-preview-close {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+}
+.news-page-preview-frame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: white;
+}
+.news-page-preview-link {
+  display: block;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--point-deep);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
 }
 
 /* Sentiment badges */
