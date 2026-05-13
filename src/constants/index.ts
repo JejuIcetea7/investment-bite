@@ -3,13 +3,14 @@ import type { DashboardWidgetKey, PropensityQuestion, TourStep } from '../types'
 export const IND_PER_PAGE = 6
 export const IND_INTERVAL_MS = 20000
 
-export const DASHBOARD_WIDGETS: DashboardWidgetKey[] = ['news', 'propensity', 'know', 'quiz']
+export const DASHBOARD_WIDGETS: DashboardWidgetKey[] = ['news', 'propensity', 'know', 'quiz', 'stockQuiz']
 
 export const DASHBOARD_WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
   news: '주요 뉴스',
   propensity: '유저 투자성향',
   know: '투자 상식 카드',
   quiz: '투자 기초 퀴즈',
+  stockQuiz: '내 종목 한입 상식',
 }
 
 export const NEWS_SECTORS = ['AI', '반도체', '조선', '에너지', '헬스', '우주', '바이오', '방산'] as const
@@ -163,6 +164,13 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
     text: '짧은 퀴즈로 경제 상식을 늘려보세요.',
     pos: 'top',
     widgetKey: 'quiz',
+  },
+  {
+    sel: '[data-tour="stock-quiz"]',
+    title: '내 종목 한입 상식',
+    text: '관심종목에 들어있는 종목의 짧은 상식 퀴즈만 랜덤으로 보여줘요.',
+    pos: 'top',
+    widgetKey: 'stockQuiz',
   },
   {
     sel: '[data-tour="beginner-toggle"]',

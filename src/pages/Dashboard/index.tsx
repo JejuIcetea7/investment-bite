@@ -6,6 +6,7 @@ import WatchlistSection from './WatchlistSection'
 import PropensitySection from './PropensitySection'
 import KnowledgeSection from './KnowledgeSection'
 import QuizSection from './QuizSection'
+import WatchStockQuizSection from './WatchStockQuizSection'
 
 export default function DashboardPage({
   marketData,
@@ -137,6 +138,18 @@ export default function DashboardPage({
           onNextQuiz={onNextQuiz}
           onRestart={onRestartQuiz}
           onToggle={() => onToggleWidget('quiz')}
+        />
+      ),
+    },
+    {
+      key: 'stockQuiz' as const,
+      node: (
+        <WatchStockQuizSection
+          watchlist={marketData.watchlist}
+          beginner={beginner}
+          hiddenWidgets={hiddenWidgets}
+          editMode={dashboardEditMode}
+          onToggle={() => onToggleWidget('stockQuiz')}
         />
       ),
     },
