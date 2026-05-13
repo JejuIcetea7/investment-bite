@@ -442,10 +442,20 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 8px;
   text-align: left;
   transition: background 0.16s, transform 0.16s;
+  position: relative;
 }
 .search-suggestion:hover {
   background: var(--point-soft);
   transform: translateY(-1px);
+}
+.search-suggestion-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
 }
 .search-suggestion-main {
   min-width: 0;
@@ -462,6 +472,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
+}
+.search-suggestion-price {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
 }
 .search-suggestion-change {
   flex: 0 0 auto;
@@ -483,6 +503,78 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--muted);
   font-size: 13px;
   text-align: center;
+}
+.search-suggestion-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.search-action-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 900;
+  transition: border-color 0.16s, background 0.16s, color 0.16s;
+}
+.search-action-btn:hover,
+.search-action-btn.active {
+  border-color: var(--point);
+  background: var(--point-soft);
+  color: var(--accent);
+}
+.search-alert-menu {
+  position: relative;
+}
+.search-alert-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 70;
+  width: 250px;
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+}
+.search-alert-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.search-alert-control {
+  display: grid;
+  grid-template-columns: 72px 1fr 52px;
+  gap: 6px;
+}
+.search-alert-control select,
+.search-alert-control input,
+.search-alert-control button {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  font-family: inherit;
+  font-size: 12px;
+}
+.search-alert-control select,
+.search-alert-control input {
+  background: var(--bg);
+  color: var(--ink);
+  padding: 0 8px;
+}
+.search-alert-control button {
+  background: var(--point);
+  color: white;
+  font-weight: 900;
 }
 
 @keyframes search-pop {
@@ -1629,7 +1721,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+}
+.chart-session-label {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
 }
 .chart-symbol {
   font-size: 11px;
