@@ -30,7 +30,7 @@ export default function PropensitySection({
       <section className="card" data-tour="propensity">
         <div className="card-head">
           <div className="card-head-left">
-            <div className="card-num"><span className="card-num-dot">4</span> 유저 투자성향</div>
+            <div className="card-num"><span className="card-num-dot">🧬</span> 유저 투자성향</div>
             <div className="card-title">나의 투자 DNA</div>
             {beginner && <div className="card-sub">간단한 설문과 관심 종목을 바탕으로 보여줘요.</div>}
           </div>

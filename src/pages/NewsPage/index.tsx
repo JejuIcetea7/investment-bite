@@ -16,6 +16,17 @@ export default function NewsPage({
   const [sectorPreviewArticle, setSectorPreviewArticle] = useState<NewsArticle | null>(null)
   const sectorArticles = newsData?.sectorNews[selectedSector] ?? []
 
+  const padToFour = (articles: NewsArticle[]) => {
+    if (articles.length >= 4) return articles.slice(0, 4)
+    if (articles.length === 0) return []
+    const padded = [...articles]
+    while (padded.length < 4) padded.push(articles[articles.length - 1])
+    return padded
+  }
+
+  const topNewsArticles = padToFour(newsData?.topNews ?? [])
+  const sectorDisplayArticles = padToFour(sectorArticles)
+
   if (!newsData) return <div className="news-page"><NewsLoadingSkeleton /></div>
 
   return (
@@ -30,9 +41,9 @@ export default function NewsPage({
         </div>
         <div className={`news-section-split ${topPreviewArticle ? 'show-preview' : ''}`}>
           <div className="news-cards-list">
-            {newsData.topNews.map((article, i) => (
+            {topNewsArticles.map((article, i) => (
               <NewsCard
-                key={i}
+                key={`${article.link}-${i}`}
                 article={article}
                 onClick={() => onCardClick(article)}
                 onPreview={() => setTopPreviewArticle((current) => current?.link === article.link ? null : article)}
@@ -70,9 +81,9 @@ export default function NewsPage({
         </div>
         <div className={`news-section-split ${sectorPreviewArticle ? 'show-preview' : ''}`} style={{ marginTop: 16 }} data-tour="news-sector-list">
           <div className="news-cards-list">
-            {sectorArticles.map((article, i) => (
+            {sectorDisplayArticles.map((article, i) => (
               <NewsCard
-                key={i}
+                key={`${article.link}-${i}`}
                 article={article}
                 onClick={() => onCardClick(article)}
                 onPreview={() => setSectorPreviewArticle((current) => current?.link === article.link ? null : article)}
@@ -107,6 +118,7 @@ function NewsPagePreview({ article, onClose }: { article: NewsArticle; onClose: 
       />
       <a className="news-page-preview-link" href={article.link} target="_blank" rel="noopener noreferrer">
         새 탭에서 원문 열기
+        <span className="news-preview-link-icon">↗</span>
       </a>
     </aside>
   )

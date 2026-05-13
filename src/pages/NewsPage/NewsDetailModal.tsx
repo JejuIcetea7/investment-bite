@@ -34,7 +34,8 @@ export default function NewsDetailModal({ article, onClose }: { article: NewsArt
           </div>
         )}
         <a href={article.link} target="_blank" rel="noopener noreferrer" className="news-detail-link">
-          원문 기사 보기 →
+          새 탭에서 원문 열기
+          <span className="news-detail-link-icon">↗</span>
         </a>
       </div>
     </>

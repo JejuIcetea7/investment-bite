@@ -39,7 +39,7 @@ export default function QuizSection({
       <section className="card" data-tour="quiz">
         <div className="card-head">
           <div className="card-head-left">
-            <div className="card-num"><span className="card-num-dot">6</span> 투자 기초 퀴즈</div>
+            <div className="card-num"><span className="card-num-dot">🎯</span> 투자 기초 퀴즈</div>
             <div className="card-title">데일리 챌린지</div>
             {beginner && <div className="card-sub">짧은 퀴즈로 경제 지식을 늘려보세요.</div>}
           </div>

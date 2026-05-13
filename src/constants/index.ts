@@ -86,6 +86,45 @@ export const STOCK_ALIASES: Record<string, string[]> = {
   TDG: ['transdigm', '트랜스다임', 'tdg'],
   HEI: ['heico', '헤이코', 'hei'],
   KTOS: ['kratos', '크라토스', 'ktos'],
+  // 한국 주식 - 추가 매핑
+  '005380.KS': ['현대모터스', '현대자동차', '현대 자동차', '현대차', 'hyundai', 'hyundai motor', 'hyundai motor company', '005380'],
+  '012330.KS': ['현대엔지니어링', '현대엔지', 'hyundai engineering', '012330'],
+  '051910.KS': ['lg화학', 'lg chem', 'lgchem', '051910'],
+  '066570.KS': ['lg전자', 'lg electronics', 'lg', '066570'],
+  '010130.KS': ['고려아연', 'korea zinc', 'zinckorea', '010130'],
+  '047810.KS': ['한국항공우주', 'korean air', 'korean aerospace', '047810'],
+}
+
+// 한국 주식 한글 이름 매핑 (Yahoo Finance 검색 결과용)
+export const KOREAN_STOCK_NAMES: Record<string, string> = {
+  '005380.KS': '현대자동차',
+  '005930.KS': '삼성전자',
+  '000660.KS': 'SK하이닉스',
+  '035720.KS': '카카오',
+  '012330.KS': '현대엔지니어링',
+  '051910.KS': 'LG화학',
+  '066570.KS': 'LG전자',
+  '010130.KS': '고려아연',
+  '047810.KS': '한국항공우주',
+}
+
+// 한글명을 symbol로 변환하는 매핑
+export const KOREAN_NAME_TO_SYMBOL: Record<string, string> = {
+  '현대차': '005380.KS',
+  '현대자동차': '005380.KS',
+  '현대 자동차': '005380.KS',
+  '현대모터스': '005380.KS',
+  '삼성전자': '005930.KS',
+  '삼전': '005930.KS',
+  'sk하이닉스': '000660.KS',
+  '하이닉스': '000660.KS',
+  '카카오': '035720.KS',
+  '현대엔지니어링': '012330.KS',
+  '현대엔지': '012330.KS',
+  'lg화학': '051910.KS',
+  'lg전자': '066570.KS',
+  '고려아연': '010130.KS',
+  '한국항공우주': '047810.KS',
 }
 
 export const SENTIMENT_CONFIG = {
@@ -185,43 +224,73 @@ export const PROPENSITY_QUESTIONS: PropensityQuestion[] = [
 
 export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
+    sel: '[data-tour="sidebar"]',
+    title: '사이드바',
+    text: '왼쪽 사이드바에서 화면 이동과 주요 설정을 모두 제어합니다.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="sidebar-menu"]',
+    title: 'MENU 바',
+    text: '대시보드, 전체 종목, 뉴스 & 리포트로 이동하는 메뉴입니다.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="sidebar-tools"]',
+    title: 'TOOLS 바',
+    text: '대시보드 편집, 투자성향 분석, 가이드 투어 같은 도구를 모아둔 영역입니다.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="today-pick"]',
+    title: "Today's Pick",
+    text: '오늘 볼 만한 포인트를 캐릭터 카드로 짧게 보여줍니다.',
+    pos: 'right',
+  },
+  {
+    sel: '[data-tour="header-search"]',
+    title: '검색 바',
+    text: '종목명, 티커, 키워드로 Yahoo Finance 검색 결과를 바로 찾을 수 있어요.',
+    pos: 'bottom',
+  },
+  {
     sel: '[data-tour="market-summary"]',
-    title: '시장 요약',
-    text: '6개의 핵심 지표를 한눈에 보세요. 카드 위에 마우스를 올리면 설명이 떠요.',
+    title: '시장지수',
+    text: '시장 흐름을 보여주는 핵심 지표를 먼저 확인합니다.',
     pos: 'bottom',
   },
   {
     sel: '[data-tour="chart"]',
-    title: '내 종목 차트',
-    text: '관심 종목의 흐름을 차트로 보고, 핵심 지표도 함께 확인할 수 있어요.',
+    title: '보고있는 종목',
+    text: '현재 보고 있는 종목의 가격, 차트, 지표를 확인할 수 있습니다. 차트분석 버튼과 Why 버튼도 여기서 봅니다.',
     pos: 'right',
   },
   {
+    sel: '[data-tour="watch"]',
+    title: '관심 리스트',
+    text: '내가 추적하는 종목의 가격과 변화를 모아서 볼 수 있어요.',
+    pos: 'left',
+  },
+  {
     sel: '[data-tour="news"]',
-    title: '시장 핵심 뉴스',
+    title: '뉴스',
     text: '오늘 시장에 영향을 주는 뉴스만 모아 보여줍니다.',
     pos: 'left',
     widgetKey: 'news',
   },
   {
-    sel: '[data-tour="watch"]',
-    title: '관심 종목',
-    text: '내가 보는 종목의 가격과 추세를 빠르게 확인하세요.',
-    pos: 'left',
+    sel: '[data-tour="know"]',
+    title: '투자 상식',
+    text: '짧은 카드로 자주 나오는 투자 개념을 차근차근 익혀보세요.',
+    pos: 'top',
+    widgetKey: 'know',
   },
   {
     sel: '[data-tour="propensity"]',
-    title: '투자성향 분석',
+    title: '투자성향',
     text: '설문과 관심 종목을 바탕으로 나만의 투자 성향을 보여줍니다.',
     pos: 'top',
     widgetKey: 'propensity',
-  },
-  {
-    sel: '[data-tour="know"]',
-    title: '투자 상식 카드',
-    text: '짧은 카드로 자주 나오는 투자 개념을 익혀보세요.',
-    pos: 'top',
-    widgetKey: 'know',
   },
   {
     sel: '[data-tour="quiz"]',
@@ -232,16 +301,10 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   },
   {
     sel: '[data-tour="stock-quiz"]',
-    title: '내 종목 한입 상식',
-    text: '관심종목에 들어있는 종목의 짧은 상식 퀴즈만 랜덤으로 보여줘요.',
+    title: '종목 한입 상식',
+    text: '관심종목에 들어있는 종목의 짧은 상식 퀴즈를 랜덤으로 보여줘요.',
     pos: 'top',
     widgetKey: 'stockQuiz',
-  },
-  {
-    sel: '[data-tour="beginner-toggle"]',
-    title: '초보자 모드',
-    text: '언제든지 토글로 쉬운 설명 표시를 켜고 끌 수 있어요.',
-    pos: 'right',
   },
 ]
 

@@ -43,7 +43,7 @@ interface EnrichedArticle extends RawArticle {
   stocks: string[]
 }
 
-async function fetchNaverNews(query: string, display = 3): Promise<RawArticle[]> {
+async function fetchNaverNews(query: string, display = 4): Promise<RawArticle[]> {
   const clientId = Deno.env.get('NAVER_CLIENT_ID')
   const clientSecret = Deno.env.get('NAVER_CLIENT_SECRET')
   if (!clientId || !clientSecret) throw new Error('NAVER_CLIENT_ID / NAVER_CLIENT_SECRET 미설정')
@@ -133,8 +133,8 @@ serve(async (req) => {
 
   try {
     const [topRaw, ...sectorRaws] = await Promise.allSettled([
-      fetchNaverNews('증시 주식 시장', 3),
-      ...Object.entries(SECTORS).map(([, query]) => fetchNaverNews(query, 3)),
+      fetchNaverNews('증시 주식 시장', 4),
+      ...Object.entries(SECTORS).map(([, query]) => fetchNaverNews(query, 4)),
     ])
 
     const topArticles = topRaw.status === 'fulfilled' ? topRaw.value : []

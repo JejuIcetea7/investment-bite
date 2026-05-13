@@ -57,7 +57,7 @@ export default function WatchStockQuizSection({
       <section className="card stock-quiz-card" data-tour="stock-quiz">
         <div className="card-head">
           <div className="card-head-left">
-            <div className="card-num"><span className="card-num-dot">7</span> 내 종목 한입 상식</div>
+            <div className="card-num"><span className="card-num-dot">📊</span> 내 종목 한입 상식</div>
             <div className="card-title">관심종목 랜덤 퀴즈</div>
             {beginner && <div className="card-sub">관심종목에 들어있는 종목의 쉬운 상식만 보여줘요.</div>}
           </div>
