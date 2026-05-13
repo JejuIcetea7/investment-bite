@@ -572,6 +572,19 @@ function App() {
     catch { /* ignore */ }
   }
 
+  const goHomeFromLogo = () => {
+    setActive('home')
+    setSearchQuery('')
+    setSearchFocused(false)
+    setNotificationsOpen(false)
+    setSelectedNewsArticle(null)
+    setTourActive(false)
+    setDashboardEditMode(false)
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
+  }
+
   return (
     <div className={`app ${beginner ? 'beginner' : 'pro'}`}>
       {loadingVisible && (
@@ -585,13 +598,13 @@ function App() {
       )}
 
       <aside className="sidebar">
-        <div className="sidebar-logo-center">
+        <button type="button" className="sidebar-logo-center" onClick={goHomeFromLogo} aria-label="대시보드 홈으로 이동">
           <img
             src="/charcter/대표_문구.png"
             alt="투자 한입 로고"
             className="sidebar-logo-img"
           />
-        </div>
+        </button>
         <div className="greet">
           <div className="greet-hi">안녕하세요</div>
           <div className="greet-name">{displayNickname}님 👋</div>
